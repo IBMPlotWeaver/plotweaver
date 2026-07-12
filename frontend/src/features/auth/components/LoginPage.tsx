@@ -71,10 +71,7 @@ export function LoginPage() {
               </div>
 
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium text-(--sea-ink)">Password</label>
-                  <a href="#" className="text-xs text-violet-600 dark:text-violet-400 hover:underline">Forgot password?</a>
-                </div>
+                <label className="text-sm font-medium text-(--sea-ink)">Password</label>
                 <Input
                   type="password"
                   {...register("password")}
