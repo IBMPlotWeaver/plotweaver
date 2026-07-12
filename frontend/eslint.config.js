@@ -17,4 +17,8 @@ export default [
   {
     ignores: ['eslint.config.js', 'prettier.config.js'],
   },
+  {
+    selector: 'typeParameter',
+    format: ['PascalCase'],
+  },
 ]
