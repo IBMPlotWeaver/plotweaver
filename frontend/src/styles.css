@@ -15,6 +15,27 @@
   --color-plot-hole: var(--color-rose-500);
 
   --animate-pulse-slow: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  
+  --animate-aurora-text: aurora-text 8s ease infinite;
+  --animate-blur-reveal: blur-reveal 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+
+  @keyframes aurora-text {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+
+  @keyframes blur-reveal {
+    0% {
+      opacity: 0;
+      filter: blur(12px);
+      transform: translateY(12px);
+    }
+    100% {
+      opacity: 1;
+      filter: blur(0px);
+      transform: translateY(0);
+    }
+  }
 }
 
 :root {

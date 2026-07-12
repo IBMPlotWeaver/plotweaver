@@ -16,7 +16,11 @@ export function LoginPage() {
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema)
   });
-  const { loading, error, setLoading, setError, reset } = useAuthUIStore();
+  const loading = useAuthUIStore(state => state.loading);
+  const error = useAuthUIStore(state => state.error);
+  const setLoading = useAuthUIStore(state => state.setLoading);
+  const setError = useAuthUIStore(state => state.setError);
+  const reset = useAuthUIStore(state => state.reset);
 
   useEffect(() => {
     // Reset state when mounting/unmounting
@@ -48,7 +52,7 @@ export function LoginPage() {
       <div className="absolute inset-0 z-0 opacity-40 pointer-events-none">
         <Aurora colorStops={['#8b5cf6', '#d946ef', '#f43f5e']} speed={0.5} amplitude={1.2} />
       </div>
-      <div className="grow flex items-center justify-center p-6 relative z-10">
+      <div className="grow flex items-center justify-center p-6 relative z-10 rise-in">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold tracking-tight mb-2 display-title mt-4">Welcome back</h1>
@@ -56,7 +60,7 @@ export function LoginPage() {
           </div>
 
           <div className="island-shell p-8 rounded-3xl transition-all duration-500 shadow-2xl shadow-violet-500/10">
-            <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
+            <form className="space-y-5 rise-in" onSubmit={handleSubmit(onSubmit)}>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-(--sea-ink)">Email Address</label>
                 <Input
