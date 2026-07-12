@@ -45,9 +45,7 @@ export function SignupPage() {
       setError(authError.message);
     } else {
       setSuccess(true);
-      // Wait a bit before redirecting
-      setTimeout(() => navigate({ to: '/login' }), 3000);
-    }
+      navigate({ to: '/login' });
   };
 
   return (
