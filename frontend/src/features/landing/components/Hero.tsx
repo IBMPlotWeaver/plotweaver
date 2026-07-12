@@ -1,19 +1,18 @@
-import React from 'react';
 import { Button } from '#/features/shadcn/components/ui/button';
 import { Sparkles } from 'lucide-react';
 
 export function Hero() {
   return (
     <section className="px-6 py-24 md:py-32 flex flex-col items-center text-center max-w-4xl mx-auto">
-      <div className="mb-8 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border border-violet-500/20 shadow-sm">
+      <div className="mb-8 inline-flex items-center gap-2 px-4 py-2 rounded-full island-shell">
         <Sparkles className="w-4 h-4 text-fuchsia-500" />
         <span className="text-sm font-semibold text-fuchsia-600 dark:text-fuchsia-400">
           AI-Powered Visual Storytelling Workspace
         </span>
       </div>
-      <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 leading-tight">
+      <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 leading-tight display-title">
         Weave Your Story,<br />
-        <span className="bg-gradient-to-r from-violet-600 to-fuchsia-500 bg-clip-text text-transparent">
+        <span className="bg-linear-to-r from-violet-600 to-fuchsia-500 bg-clip-text text-transparent">
           Visually.
         </span>
       </h1>

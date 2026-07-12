@@ -1,19 +1,20 @@
-import ShapeGrid from './react-bits/ShapeGrid';
 import { Header } from './Header';
 import { Hero } from './Hero';
 import { ToolsSection } from './ToolsSection';
 import { WhyUsSection } from './WhyUsSection';
 import { Footer } from './Footer';
+import Aurora from './react-bits/Aurora';
 
 export default function LandingPage() {
   return (
-    <div className="relative min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 overflow-hidden font-sans">
+    <div className="relative min-h-screen overflow-hidden font-sans">
       {/* Background ShapeGrid */}
-      <div className="fixed inset-0 z-0 opacity-15 pointer-events-none">
-        <ShapeGrid
-          shape="hexagon"
-          hoverFillColor="#8b5cf6"
-          borderColor="rgba(139, 92, 246, 0.15)"
+      <div className="fixed inset-0 z-0 opacity-50">
+        <Aurora
+          colorStops={["#8b5cf6", "#d946ef", "#f43f5e"]}
+          blend={0.5}
+          amplitude={1.0}
+          speed={1}
         />
       </div>
 
