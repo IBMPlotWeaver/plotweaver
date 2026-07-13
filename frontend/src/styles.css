@@ -416,3 +416,30 @@ a {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
 }
+
+/* ─── ReactFlow overrides ─────────────────────────────────── */
+.react-flow__controls {
+  gap: 2px;
+}
+
+.react-flow__controls-button {
+  background: transparent !important;
+  border: none !important;
+  color: var(--sea-ink-soft) !important;
+  width: 32px !important;
+  height: 32px !important;
+}
+
+.react-flow__controls-button:hover {
+  background: var(--line) !important;
+  color: var(--sea-ink) !important;
+}
+
+.react-flow__edge-path {
+  stroke: var(--lagoon) !important;
+}
+
+.react-flow__attribution {
+  display: none;
+}
+
