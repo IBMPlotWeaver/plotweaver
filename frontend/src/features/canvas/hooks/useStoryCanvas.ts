@@ -16,6 +16,8 @@ export function useStoryNodes(storyId: string) {
       if (error) throw error
       return data as StoryNode[]
     },
+    // Active editing workspace, but we can cache for 30 seconds
+    staleTime: 30 * 1000,
   })
 }
 
@@ -31,6 +33,8 @@ export function useStoryEdges(storyId: string) {
       if (error) throw error
       return data as StoryEdge[]
     },
+    // Active editing workspace, but we can cache for 30 seconds
+    staleTime: 30 * 1000,
   })
 }
 

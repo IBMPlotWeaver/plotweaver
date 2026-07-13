@@ -1,18 +1,11 @@
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '#/lib/supabase';
 import { Button } from '#/features/shadcn/components/ui/button';
 import { StoryCard } from './StoryCard';
 import { useStories } from '../hooks/useStories';
+import { useCurrentUser } from '#/lib/useCurrentUser';
 import { BookOpen, Loader2, AlertCircle, Sparkles } from 'lucide-react';
 
 export function DashboardPage() {
-  const { data: user } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      return user;
-    },
-  });
+  const { data: user } = useCurrentUser();
 
   const { data: stories, isLoading, error } = useStories(user?.id);
 

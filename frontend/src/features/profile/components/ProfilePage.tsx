@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { supabase } from '#/lib/supabase';
 import { Button } from '#/features/shadcn/components/ui/button';
 import { Input } from '#/features/shadcn/components/ui/input';
 import { useProfile, useUpdateProfile } from '../hooks/useProfile';
+import { useCurrentUser } from '#/lib/useCurrentUser';
 import {
   User,
   Mail,
@@ -20,13 +20,7 @@ import {
 } from 'lucide-react';
 
 export function ProfilePage() {
-  const { data: user } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      return user;
-    },
-  });
+  const { data: user } = useCurrentUser();
 
   const { data: profile, isLoading } = useProfile(user?.id);
   const updateProfileMutation = useUpdateProfile();

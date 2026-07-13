@@ -22,6 +22,8 @@ export function useProfile(userId: string | undefined) {
       return data as Profile
     },
     enabled: !!userId,
+    // Profile rarely changes; cache for 5 minutes
+    staleTime: 5 * 60 * 1000,
   })
 }
 
