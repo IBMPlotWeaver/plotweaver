@@ -9,20 +9,15 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as LayoutRouteImport } from './routes/_layout'
 import { Route as DashboardLayoutRouteImport } from './routes/_dashboard-layout'
 import { Route as LayoutIndexRouteImport } from './routes/_layout/index'
 import { Route as CanvasStoryIdRouteImport } from './routes/canvas.$storyId'
 import { Route as LayoutSignupRouteImport } from './routes/_layout/signup'
 import { Route as LayoutLoginRouteImport } from './routes/_layout/login'
+import { Route as DashboardLayoutProfileRouteImport } from './routes/_dashboard-layout/profile'
 import { Route as DashboardLayoutDashboardRouteImport } from './routes/_dashboard-layout/dashboard'
 
-const ProfileRoute = ProfileRouteImport.update({
-  id: '/profile',
-  path: '/profile',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const LayoutRoute = LayoutRouteImport.update({
   id: '/_layout',
   getParentRoute: () => rootRouteImport,
@@ -51,6 +46,11 @@ const LayoutLoginRoute = LayoutLoginRouteImport.update({
   path: '/login',
   getParentRoute: () => LayoutRoute,
 } as any)
+const DashboardLayoutProfileRoute = DashboardLayoutProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => DashboardLayoutRoute,
+} as any)
 const DashboardLayoutDashboardRoute =
   DashboardLayoutDashboardRouteImport.update({
     id: '/dashboard',
@@ -60,16 +60,16 @@ const DashboardLayoutDashboardRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof LayoutIndexRoute
-  '/profile': typeof ProfileRoute
   '/dashboard': typeof DashboardLayoutDashboardRoute
+  '/profile': typeof DashboardLayoutProfileRoute
   '/login': typeof LayoutLoginRoute
   '/signup': typeof LayoutSignupRoute
   '/canvas/$storyId': typeof CanvasStoryIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof LayoutIndexRoute
-  '/profile': typeof ProfileRoute
   '/dashboard': typeof DashboardLayoutDashboardRoute
+  '/profile': typeof DashboardLayoutProfileRoute
   '/login': typeof LayoutLoginRoute
   '/signup': typeof LayoutSignupRoute
   '/canvas/$storyId': typeof CanvasStoryIdRoute
@@ -78,8 +78,8 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_dashboard-layout': typeof DashboardLayoutRouteWithChildren
   '/_layout': typeof LayoutRouteWithChildren
-  '/profile': typeof ProfileRoute
   '/_dashboard-layout/dashboard': typeof DashboardLayoutDashboardRoute
+  '/_dashboard-layout/profile': typeof DashboardLayoutProfileRoute
   '/_layout/login': typeof LayoutLoginRoute
   '/_layout/signup': typeof LayoutSignupRoute
   '/canvas/$storyId': typeof CanvasStoryIdRoute
@@ -88,16 +88,16 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/profile' | '/dashboard' | '/login' | '/signup' | '/canvas/$storyId'
+    '/' | '/dashboard' | '/profile' | '/login' | '/signup' | '/canvas/$storyId'
   fileRoutesByTo: FileRoutesByTo
   to:
-    '/' | '/profile' | '/dashboard' | '/login' | '/signup' | '/canvas/$storyId'
+    '/' | '/dashboard' | '/profile' | '/login' | '/signup' | '/canvas/$storyId'
   id:
     | '__root__'
     | '/_dashboard-layout'
     | '/_layout'
-    | '/profile'
     | '/_dashboard-layout/dashboard'
+    | '/_dashboard-layout/profile'
     | '/_layout/login'
     | '/_layout/signup'
     | '/canvas/$storyId'
@@ -107,19 +107,11 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   DashboardLayoutRoute: typeof DashboardLayoutRouteWithChildren
   LayoutRoute: typeof LayoutRouteWithChildren
-  ProfileRoute: typeof ProfileRoute
   CanvasStoryIdRoute: typeof CanvasStoryIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/profile': {
-      id: '/profile'
-      path: '/profile'
-      fullPath: '/profile'
-      preLoaderRoute: typeof ProfileRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_layout': {
       id: '/_layout'
       path: ''
@@ -162,6 +154,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutLoginRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_dashboard-layout/profile': {
+      id: '/_dashboard-layout/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof DashboardLayoutProfileRouteImport
+      parentRoute: typeof DashboardLayoutRoute
+    }
     '/_dashboard-layout/dashboard': {
       id: '/_dashboard-layout/dashboard'
       path: '/dashboard'
@@ -174,10 +173,12 @@ declare module '@tanstack/react-router' {
 
 interface DashboardLayoutRouteChildren {
   DashboardLayoutDashboardRoute: typeof DashboardLayoutDashboardRoute
+  DashboardLayoutProfileRoute: typeof DashboardLayoutProfileRoute
 }
 
 const DashboardLayoutRouteChildren: DashboardLayoutRouteChildren = {
   DashboardLayoutDashboardRoute: DashboardLayoutDashboardRoute,
+  DashboardLayoutProfileRoute: DashboardLayoutProfileRoute,
 }
 
 const DashboardLayoutRouteWithChildren = DashboardLayoutRoute._addFileChildren(
@@ -202,7 +203,6 @@ const LayoutRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   DashboardLayoutRoute: DashboardLayoutRouteWithChildren,
   LayoutRoute: LayoutRouteWithChildren,
-  ProfileRoute: ProfileRoute,
   CanvasStoryIdRoute: CanvasStoryIdRoute,
 }
 export const routeTree = rootRouteImport
