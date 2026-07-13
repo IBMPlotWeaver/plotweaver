@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import {
   ReactFlow,
   Background,
@@ -12,20 +12,22 @@ import { useParams } from '@tanstack/react-router';
 
 import { useCanvasStore } from '#/features/canvas/store/useCanvasStore';
 import { CanvasToolbar } from '#/features/canvas/components/CanvasToolbar';
-import { SceneNode } from '#/features/canvas/components/nodes/SceneNode';
+import { NodesSidebar } from '#/features/canvas/components/NodesSidebar';
+import { StoryBeatNode } from '#/features/canvas/components/nodes/StoryBeatNode';
 import { CharacterNode } from '#/features/canvas/components/nodes/CharacterNode';
-import { EventNode } from '#/features/canvas/components/nodes/EventNode';
+import { WorldRuleNode } from '#/features/canvas/components/nodes/WorldRuleNode';
+import { useUnsavedChangesWarning } from '#/features/canvas/hooks/useUnsavedChangesWarning';
 
 /** Stable node type map — defined outside component to prevent remount on re-render. */
 const NODE_TYPES = {
-  scene: SceneNode,
+  storyBeat: StoryBeatNode,
   character: CharacterNode,
-  event: EventNode,
+  worldRule: WorldRuleNode,
 } as const;
 
 /**
  * Main story canvas page. Renders the ReactFlow canvas with custom nodes,
- * the floating toolbar, a minimap, and a background dot grid.
+ * a collapsible nodes sidebar, a floating toolbar, minimap, and background grid.
  */
 export function StoryCanvas() {
   const { storyId } = useParams({ from: '/canvas/$storyId' });
@@ -37,7 +39,36 @@ export function StoryCanvas() {
     onEdgesChange,
     onConnect,
     setSelectedNodeId,
+    loadCanvas,
+    saveCanvas,
+    setStoryId,
   } = useCanvasStore();
+
+  // Enable unsaved changes warning
+  useUnsavedChangesWarning();
+
+  // Load canvas data when component mounts or storyId changes
+  useEffect(() => {
+    if (storyId) {
+      setStoryId(storyId);
+      loadCanvas(storyId).catch((error) => {
+        console.error('Failed to load canvas:', error);
+      });
+    }
+  }, [storyId, loadCanvas, setStoryId]);
+
+  // Auto-save canvas periodically (every 30 seconds)
+  useEffect(() => {
+    if (!storyId) return;
+
+    const interval = setInterval(() => {
+      saveCanvas().catch((error) => {
+        console.error('Auto-save failed:', error);
+      });
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [storyId, saveCanvas]);
 
   const handleNodeClick = useCallback(
     (_: React.MouseEvent, node: { id: string }) => {
@@ -51,7 +82,7 @@ export function StoryCanvas() {
   }, [setSelectedNodeId]);
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden bg-[var(--bg-base)]">
+    <div className="relative w-screen h-screen overflow-hidden bg-(--bg-base)">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -70,7 +101,10 @@ export function StoryCanvas() {
           style: { strokeWidth: 2, stroke: 'var(--lagoon)' },
         }}
       >
-        {/* Toolbar floats at top-center inside the ReactFlow container */}
+        {/* Sidebar inside ReactFlow so useReactFlow() context is available */}
+        <NodesSidebar />
+
+        {/* Toolbar floats at top-center */}
         <CanvasToolbar storyTitle={`Story — ${storyId}`} />
 
         <Background
@@ -81,17 +115,17 @@ export function StoryCanvas() {
         />
 
         <Controls
-          className="!bottom-6 !left-6 !shadow-lg !rounded-2xl !border !border-[var(--line)] !bg-[var(--surface)] !backdrop-blur"
+          className="bottom-6! left-6! md:left-72! shadow-lg! rounded-2xl! border! border-(--line)! bg-(--surface)! backdrop-blur! transition-all duration-300"
           showInteractive={false}
         />
 
         <MiniMap
-          className="!bottom-6 !right-6 !rounded-2xl !border !border-[var(--line)] !bg-[var(--surface)] !shadow-lg"
+          className="bottom-6! right-6! rounded-2xl! border! border-(--line)! bg-(--surface)! shadow-lg!"
           nodeColor={(node) => {
             const colors: Record<string, string> = {
-              scene: '#8b5cf6',
+              storyBeat: '#8b5cf6',
               character: '#d946ef',
-              event: '#f43f5e',
+              worldRule: '#7c3aed',
             };
             return colors[node.type ?? ''] ?? '#94a3b8';
           }}

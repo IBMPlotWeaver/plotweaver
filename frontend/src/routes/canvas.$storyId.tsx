@@ -4,6 +4,7 @@ import { getCurrentUser } from '#/lib/auth'
 
 export const Route = createFileRoute('/canvas/$storyId')({
   beforeLoad: async () => {
+    if (typeof window === 'undefined') return; // Skip auth check during SSR
     const user = await getCurrentUser()
     if (!user) {
       throw redirect({

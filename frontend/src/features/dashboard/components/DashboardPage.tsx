@@ -1,13 +1,15 @@
+import { useState } from 'react';
 import { Button } from '#/features/shadcn/components/ui/button';
 import { StoryCard } from './StoryCard';
+import { CreateStoryDialog } from './CreateStoryDialog';
 import { useStories } from '../hooks/useStories';
 import { useCurrentUser } from '#/lib/useCurrentUser';
 import { BookOpen, Loader2, AlertCircle, Sparkles } from 'lucide-react';
 
 export function DashboardPage() {
   const { data: user } = useCurrentUser();
-
   const { data: stories, isLoading, error } = useStories(user?.id);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   const displayName = user?.user_metadata?.full_name ?? user?.email?.split('@')[0] ?? 'Writer';
   const storyCount = stories?.length ?? 0;
@@ -64,7 +66,10 @@ export function DashboardPage() {
             <p className="text-sm text-(--sea-ink-soft) mb-6 leading-relaxed">
               Create your first story and start weaving your narrative with AI assistance. Every great story starts with a single node.
             </p>
-            <Button className="w-full rounded-xl h-11 bg-linear-to-r from-violet-600 to-fuchsia-500 hover:from-violet-700 hover:to-fuchsia-600 text-white border-none shadow-lg shadow-violet-500/20 gap-2">
+            <Button
+              onClick={() => setIsCreateDialogOpen(true)}
+              className="w-full rounded-xl h-11 bg-linear-to-r from-violet-600 to-fuchsia-500 hover:from-violet-700 hover:to-fuchsia-600 text-white border-none shadow-lg shadow-violet-500/20 gap-2"
+            >
               <Sparkles className="w-4 h-4" />
               Create Your First Story
             </Button>
@@ -74,18 +79,34 @@ export function DashboardPage() {
 
       {/* ── Stories grid ─────────────────────────── */}
       {!isLoading && !error && storyCount > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 animate-blur-reveal [animation-delay:150ms]">
-          {stories?.map((story, i) => (
-            <div
-              key={story.id}
-              className="animate-blur-reveal opacity-0"
-              style={{ animationDelay: `${i * 75}ms` }}
+        <>
+          {/* Create new story button */}
+          <div className="mb-6 flex justify-end">
+            <Button
+              onClick={() => setIsCreateDialogOpen(true)}
+              className="rounded-xl bg-linear-to-r from-violet-600 to-fuchsia-500 hover:from-violet-700 hover:to-fuchsia-600 text-white border-none shadow-lg shadow-violet-500/20 gap-2"
             >
-              <StoryCard story={story} />
-            </div>
-          ))}
-        </div>
+              <Sparkles className="w-4 h-4" />
+              New Story
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 animate-blur-reveal [animation-delay:150ms]">
+            {stories?.map((story, i) => (
+              <div
+                key={story.id}
+                className="animate-blur-reveal opacity-0"
+                style={{ animationDelay: `${i * 75}ms` }}
+              >
+                <StoryCard story={story} />
+              </div>
+            ))}
+          </div>
+        </>
       )}
+
+      {/* Create Story Dialog */}
+      <CreateStoryDialog isOpen={isCreateDialogOpen} onClose={() => setIsCreateDialogOpen(false)} />
     </main>
   );
 }

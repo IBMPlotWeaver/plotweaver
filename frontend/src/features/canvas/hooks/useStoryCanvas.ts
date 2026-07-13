@@ -96,7 +96,7 @@ export function useDeleteNode() {
 
       if (error) throw error
     },
-    onSuccess: (_, id) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['story-nodes'] })
     },
   })

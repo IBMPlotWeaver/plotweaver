@@ -14,7 +14,6 @@ import {
   Sun,
   User,
   LogOut,
-  Plus,
   ChevronDown,
   Settings,
 } from 'lucide-react';
@@ -48,12 +47,6 @@ export function DashboardHeader() {
 
         {/* Right actions */}
         <div className="flex items-center gap-2">
-          {/* New Story — icon-only on mobile, full label on sm+ */}
-          <Button className="rounded-full bg-linear-to-r from-violet-600 to-fuchsia-500 hover:from-violet-700 hover:to-fuchsia-600 text-white border-none shadow-md shadow-violet-500/20 gap-1.5 px-3 sm:px-5">
-            <Plus className="h-4 w-4 shrink-0" />
-            <span className="hidden sm:inline text-sm font-medium">New Story</span>
-          </Button>
-
           {/* User dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
