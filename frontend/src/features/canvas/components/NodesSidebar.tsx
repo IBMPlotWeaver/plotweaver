@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useReactFlow, Panel } from '@xyflow/react';
-import { BookOpen, User, Shield, ChevronRight, PanelLeftOpen, PanelLeftClose, Hash, MapPin } from 'lucide-react';
+import { BookOpen, User, Shield, ChevronRight, PanelLeftOpen, PanelLeftClose, Hash, MapPin, Code, Copy, Check } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
@@ -8,8 +8,64 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '#/features/shadcn/components/ui/sheet';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '#/features/shadcn/components/ui/dialog';
 import { useCanvasStore } from '#/features/canvas/store/useCanvasStore';
 import type { StoryBeatNodeData, CharacterNodeData, WorldRuleNodeData } from '#/features/canvas/types/canvas.types';
+
+/**
+ * Modal that displays the current canvas nodes and edges as formatted JSON.
+ */
+function JsonModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const [copied, setCopied] = useState(false);
+  const { nodes, edges } = useCanvasStore();
+
+  const json = JSON.stringify({ nodes, edges }, null, 2);
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(json);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-3xl w-[90vw] max-h-[90vh] overflow-hidden flex flex-col bg-(--surface) border-(--line) text-(--sea-ink)">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-(--sea-ink)">
+            <Code className="w-4 h-4 text-violet-500" />
+            Canvas JSON
+          </DialogTitle>
+        </DialogHeader>
+        <div className="flex-1 flex flex-col gap-2 min-h-0">
+          <p className="text-xs text-(--sea-ink-soft) shrink-0">
+            {nodes.length} node{nodes.length !== 1 ? 's' : ''} · {edges.length} edge{edges.length !== 1 ? 's' : ''}
+          </p>
+          <div className="relative flex-1 min-h-0">
+            <textarea
+              readOnly
+              wrap="off"
+              className="w-full h-full min-h-150 resize-none rounded-xl bg-zinc-950 text-zinc-200 text-xs p-4 pt-12 leading-relaxed outline-none custom-scrollbar"
+              value={json}
+            />
+            <button
+              onClick={handleCopy}
+              className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-medium transition-colors cursor-pointer"
+              title="Copy to clipboard"
+            >
+              {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+              {copied ? 'Copied!' : 'Copy'}
+            </button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 interface NodeSection<T> {
   label: string;
@@ -29,6 +85,7 @@ export function NodesSidebar() {
   const { nodes, selectedNodeId, setSelectedNodeId } = useCanvasStore();
   const { fitBounds, getNode } = useReactFlow();
   const [open, setOpen] = useState(false);
+  const [jsonOpen, setJsonOpen] = useState(false);
 
   const storyBeats = nodes.filter((n) => n.type === 'storyBeat');
   const characters = nodes.filter((n) => n.type === 'character');
@@ -162,11 +219,25 @@ export function NodesSidebar() {
           ))
         )}
       </div>
+
+      {/* Get JSON footer */}
+      <div className="shrink-0 px-4 py-3 border-t border-(--line)">
+        <button
+          onClick={() => setJsonOpen(true)}
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-(--sea-ink-soft) hover:bg-(--line) hover:text-(--sea-ink) transition-colors cursor-pointer border border-(--line)"
+          title="Export canvas as JSON"
+        >
+          <Code className="w-3.5 h-3.5" />
+          Get JSON
+        </button>
+      </div>
     </div>
   );
 
   return (
     <>
+      <JsonModal open={jsonOpen} onClose={() => setJsonOpen(false)} />
+
       {/* Mobile: Sheet trigger via Panel (bottom-left) */}
       <Panel position="bottom-left" className="md:hidden mb-14">
         <Sheet open={open} onOpenChange={setOpen}>
