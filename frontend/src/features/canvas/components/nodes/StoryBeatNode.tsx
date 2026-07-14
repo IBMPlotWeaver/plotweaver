@@ -10,7 +10,8 @@ import { useCanvasStore } from '#/features/canvas/store/useCanvasStore';
  * Represents a scene, chapter outline, or specific turning point in the timeline.
  */
 export const StoryBeatNode = memo(({ id, data, selected }: NodeProps<Node<StoryBeatNodeData, 'storyBeat'>>) => {
-  const { updateNodeData, deleteNode } = useCanvasStore();
+  const deleteNode = useCanvasStore(state => state.deleteNode);
+  const updateNodeData = useCanvasStore(state => state.updateNodeData);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState({
     title: data.title,
@@ -34,16 +35,17 @@ export const StoryBeatNode = memo(({ id, data, selected }: NodeProps<Node<StoryB
 
   const hasAIWarning = data.hasAIWarning || false;
   const timelineOrder = data.timelineOrder ?? 0;
-  
+
   // Dynamically extract mentioned characters from text
   const { nodes } = useCanvasStore();
   const textToScan = (editing ? `${draft.title} ${draft.summary}` : `${data.title} ${data.summary}`).toLowerCase();
-  
+
   const characterNames = Array.from(new Set(
     nodes
       .filter(n => n.type === 'character')
-      .filter(char => char.data.name && textToScan.includes(`@${char.data.name.toLowerCase()}`))
-      .map(char => char.data.name)
+      .map(char => char.data as import('#/features/canvas/types/canvas.types').CharacterNodeData)
+      .filter(charData => charData.name && textToScan.includes(`@${charData.name.toLowerCase()}`))
+      .map(charData => charData.name)
   ));
 
   return (
@@ -100,12 +102,12 @@ export const StoryBeatNode = memo(({ id, data, selected }: NodeProps<Node<StoryB
             <textarea
               value={draft.summary}
               onChange={(e) => setDraft((d) => ({ ...d, summary: e.target.value }))}
-              className="w-full flex-1 min-h-15 text-xs bg-transparent outline-none resize-none text-(--sea-ink-soft) border border-(--line) rounded-lg p-2 break-words"
+              className="w-full flex-1 min-h-15 text-xs bg-transparent outline-none resize-none text-(--sea-ink-soft) border border-(--line) rounded-lg p-2 wrap-break-word"
               placeholder="Describe the beat. Type @CharacterName to tag characters..."
             />
           ) : (
             <div className="flex-1 overflow-y-auto min-h-0 pr-1 custom-scrollbar">
-              <p className="text-xs text-(--sea-ink-soft) leading-relaxed whitespace-pre-wrap break-words">
+              <p className="text-xs text-(--sea-ink-soft) leading-relaxed whitespace-pre-wrap wrap-break-word">
                 {data.summary || 'No summary yet...'}
               </p>
             </div>

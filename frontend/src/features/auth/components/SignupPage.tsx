@@ -20,7 +20,13 @@ export function SignupPage() {
     resolver: zodResolver(signupSchema),
   });
 
-  const { loading, error, success, setLoading, setError, setSuccess, reset } = useAuthUIStore();
+  const loading = useAuthUIStore(state => state.loading)
+  const error = useAuthUIStore(state => state.error)
+  const setLoading = useAuthUIStore(state => state.setLoading)
+  const setError = useAuthUIStore(state => state.setError)
+  const reset = useAuthUIStore(state => state.reset)
+  const success = useAuthUIStore(state => state.success)
+  const setSuccess = useAuthUIStore(state => state.setSuccess)
 
   useEffect(() => {
     reset();
@@ -49,52 +55,52 @@ export function SignupPage() {
   };
 
   return (
-    <div className="flex-grow flex items-center justify-center p-6">
+    <div className="grow flex items-center justify-center p-6">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold tracking-tight mb-2 display-title mt-4">Create an account</h1>
-          <p className="text-[var(--sea-ink-soft)]">Join the AI Builders Challenge to start weaving.</p>
+          <p className="text-(--sea-ink-soft)">Join the AI Builders Challenge to start weaving.</p>
         </div>
 
         <div className="island-shell p-8 rounded-3xl transition-all duration-500 shadow-2xl shadow-violet-500/10">
           <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-[var(--sea-ink)]">Name</label>
+              <label className="text-sm font-medium text-(--sea-ink)">Name</label>
               <Input
                 type="text"
                 {...register('name')}
                 placeholder="Your Name"
-                className={`w-full h-12 px-4 rounded-xl bg-[var(--surface)] border ${errors.name ? 'border-red-500 focus-visible:ring-red-500/20' : 'border-[var(--line)] focus-visible:ring-violet-500/20 focus-visible:border-violet-500'} outline-none transition-all placeholder:text-[var(--sea-ink-soft)]/50 text-[var(--sea-ink)]`}
+                className={`w-full h-12 px-4 rounded-xl bg-(--surface) border ${errors.name ? 'border-red-500 focus-visible:ring-red-500/20' : 'border-(--line) focus-visible:ring-violet-500/20 focus-visible:border-violet-500'} outline-none transition-all placeholder:text-(--sea-ink-soft)/50 text-(--sea-ink)`}
               />
               {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name.message}</p>}
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-[var(--sea-ink)]">Email Address</label>
+              <label className="text-sm font-medium text-(--sea-ink)">Email Address</label>
               <Input
                 type="email"
                 {...register('email')}
                 placeholder="author@example.com"
-                className={`w-full h-12 px-4 rounded-xl bg-[var(--surface)] border ${errors.email ? 'border-red-500 focus-visible:ring-red-500/20' : 'border-[var(--line)] focus-visible:ring-violet-500/20 focus-visible:border-violet-500'} outline-none transition-all placeholder:text-[var(--sea-ink-soft)]/50 text-[var(--sea-ink)]`}
+                className={`w-full h-12 px-4 rounded-xl bg-(--surface) border ${errors.email ? 'border-red-500 focus-visible:ring-red-500/20' : 'border-(--line) focus-visible:ring-violet-500/20 focus-visible:border-violet-500'} outline-none transition-all placeholder:text-(--sea-ink-soft)/50 text-(--sea-ink)`}
               />
               {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email.message}</p>}
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-[var(--sea-ink)]">Password</label>
+              <label className="text-sm font-medium text-(--sea-ink)">Password</label>
               <div className="relative">
                 <Input
                   type={showPassword ? 'text' : 'password'}
                   {...register('password')}
                   placeholder="••••••••"
-                  className={`w-full h-12 px-4 pr-12 rounded-xl bg-[var(--surface)] border ${errors.password ? 'border-red-500 focus-visible:ring-red-500/20' : 'border-[var(--line)] focus-visible:ring-violet-500/20 focus-visible:border-violet-500'} outline-none transition-all placeholder:text-[var(--sea-ink-soft)]/50 text-[var(--sea-ink)]`}
+                  className={`w-full h-12 px-4 pr-12 rounded-xl bg-(--surface) border ${errors.password ? 'border-red-500 focus-visible:ring-red-500/20' : 'border-(--line) focus-visible:ring-violet-500/20 focus-visible:border-violet-500'} outline-none transition-all placeholder:text-(--sea-ink-soft)/50 text-(--sea-ink)`}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                   aria-pressed={showPassword}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--sea-ink-soft)] hover:text-[var(--sea-ink)] transition-colors cursor-pointer"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-(--sea-ink-soft) hover:text-(--sea-ink) transition-colors cursor-pointer"
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
@@ -129,8 +135,8 @@ export function SignupPage() {
             </Button>
           </form>
 
-          <div className="mt-8 pt-6 border-t border-[var(--line)] text-center">
-            <p className="text-[var(--sea-ink-soft)] text-sm">
+          <div className="mt-8 pt-6 border-t border-(--line) text-center">
+            <p className="text-(--sea-ink-soft) text-sm">
               Already have an account?{' '}
               <Link to="/login" className="text-violet-600 dark:text-violet-400 font-medium hover:underline">
                 Sign in

@@ -11,7 +11,8 @@ import { useCanvasStore } from '#/features/canvas/store/useCanvasStore';
  * Creates a "murder board" style layout where characters can be visually connected to story beats.
  */
 export const CharacterNode = memo(({ id, data, selected }: NodeProps<Node<CharacterNodeData, 'character'>>) => {
-  const { updateNodeData, deleteNode } = useCanvasStore();
+  const deleteNode = useCanvasStore(state => state.deleteNode);
+  const updateNodeData = useCanvasStore(state => state.updateNodeData);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState({
     name: data.name,

@@ -47,11 +47,11 @@ export function CreateStoryDialog({ isOpen, onClose }: CreateStoryDialogProps) {
             <div className="w-8 h-8 rounded-lg bg-violet-100 dark:bg-violet-900/40 flex items-center justify-center">
               <Sparkles className="w-4 h-4 text-violet-600 dark:text-violet-400" />
             </div>
-            <h2 className="text-lg font-semibold text-[var(--sea-ink)]">Create New Story</h2>
+            <h2 className="text-lg font-semibold text-(--sea-ink)">Create New Story</h2>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-[var(--sea-ink-soft)] hover:bg-[var(--line)] transition-colors"
+            className="p-1.5 rounded-lg text-(--sea-ink-soft) hover:bg-(--line) transition-colors"
             disabled={createStory.isPending}
           >
             <X className="w-5 h-5" />
@@ -61,7 +61,7 @@ export function CreateStoryDialog({ isOpen, onClose }: CreateStoryDialogProps) {
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="title" className="block text-sm font-medium text-[var(--sea-ink)] mb-1.5">
+            <label htmlFor="title" className="block text-sm font-medium text-(--sea-ink) mb-1.5">
               Story Title *
             </label>
             <Input
@@ -76,7 +76,7 @@ export function CreateStoryDialog({ isOpen, onClose }: CreateStoryDialogProps) {
           </div>
 
           <div>
-            <label htmlFor="description" className="block text-sm font-medium text-[var(--sea-ink)] mb-1.5">
+            <label htmlFor="description" className="block text-sm font-medium text-(--sea-ink) mb-1.5">
               Description (optional)
             </label>
             <textarea
@@ -84,7 +84,7 @@ export function CreateStoryDialog({ isOpen, onClose }: CreateStoryDialogProps) {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Brief description of your story..."
-              className="w-full px-3 py-2 text-sm rounded-lg border border-[var(--line)] bg-transparent text-[var(--sea-ink)] placeholder:text-[var(--sea-ink-soft)] focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent resize-none"
+              className="w-full px-3 py-2 text-sm rounded-lg border border-(--line) bg-transparent text-(--sea-ink) placeholder:text-(--sea-ink-soft) focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent resize-none"
               rows={3}
               disabled={createStory.isPending}
             />

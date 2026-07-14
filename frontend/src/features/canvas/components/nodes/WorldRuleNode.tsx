@@ -12,7 +12,8 @@ import { useCanvasStore } from '#/features/canvas/store/useCanvasStore';
  * Floats on canvas as a visual reminder of world-building rules.
  */
 export const WorldRuleNode = memo(({ id, data, selected }: NodeProps<Node<WorldRuleNodeData, 'worldRule'>>) => {
-  const { updateNodeData, deleteNode } = useCanvasStore();
+  const deleteNode = useCanvasStore(state => state.deleteNode);
+  const updateNodeData = useCanvasStore(state => state.updateNodeData);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState({
     title: data.title,

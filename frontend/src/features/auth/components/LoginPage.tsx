@@ -18,7 +18,11 @@ export function LoginPage() {
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
   });
-  const { loading, error, setLoading, setError, reset } = useAuthUIStore();
+  const loading = useAuthUIStore(state => state.loading)
+  const error = useAuthUIStore(state => state.error)
+  const setLoading = useAuthUIStore(state => state.setLoading)
+  const setError = useAuthUIStore(state => state.setError)
+  const reset = useAuthUIStore(state => state.reset)
 
   useEffect(() => {
     reset();
@@ -44,36 +48,36 @@ export function LoginPage() {
   };
 
   return (
-    <div className="flex-grow flex items-center justify-center p-6">
+    <div className="grow flex items-center justify-center p-6">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold tracking-tight mb-2 display-title mt-4">Welcome back</h1>
-          <p className="text-[var(--sea-ink-soft)]">Sign in to continue weaving your story.</p>
+          <p className="text-(--sea-ink-soft)">Sign in to continue weaving your story.</p>
         </div>
 
         <div className="island-shell p-8 rounded-3xl transition-all duration-500 shadow-2xl shadow-violet-500/10">
           <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-[var(--sea-ink)]">Email Address</label>
+              <label className="text-sm font-medium text-(--sea-ink)">Email Address</label>
               <Input
                 type="email"
                 {...register('email')}
                 placeholder="author@example.com"
-                className={`w-full h-12 px-4 rounded-xl bg-[var(--surface)] border ${errors.email ? 'border-red-500 focus-visible:ring-red-500/20' : 'border-[var(--line)] focus-visible:ring-violet-500/20 focus-visible:border-violet-500'} outline-none transition-all placeholder:text-[var(--sea-ink-soft)]/50 text-[var(--sea-ink)]`}
+                className={`w-full h-12 px-4 rounded-xl bg-(--surface) border ${errors.email ? 'border-red-500 focus-visible:ring-red-500/20' : 'border-(--line) focus-visible:ring-violet-500/20 focus-visible:border-violet-500'} outline-none transition-all placeholder:text-(--sea-ink-soft)/50 text-(--sea-ink)`}
               />
               {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email.message}</p>}
             </div>
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="text-sm font-medium text-[var(--sea-ink)]">Password</label>
+                <label className="text-sm font-medium text-(--sea-ink)">Password</label>
                 <a href="#" className="text-xs text-violet-600 dark:text-violet-400 hover:underline">Forgot password?</a>
               </div>
               <Input
                 type="password"
                 {...register('password')}
                 placeholder="••••••••"
-                className={`w-full h-12 px-4 rounded-xl bg-[var(--surface)] border ${errors.password ? 'border-red-500 focus-visible:ring-red-500/20' : 'border-[var(--line)] focus-visible:ring-violet-500/20 focus-visible:border-violet-500'} outline-none transition-all placeholder:text-[var(--sea-ink-soft)]/50 text-[var(--sea-ink)]`}
+                className={`w-full h-12 px-4 rounded-xl bg-(--surface) border ${errors.password ? 'border-red-500 focus-visible:ring-red-500/20' : 'border-(--line) focus-visible:ring-violet-500/20 focus-visible:border-violet-500'} outline-none transition-all placeholder:text-(--sea-ink-soft)/50 text-(--sea-ink)`}
               />
               {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password.message}</p>}
             </div>
@@ -99,8 +103,8 @@ export function LoginPage() {
             </Button>
           </form>
 
-          <div className="mt-8 pt-6 border-t border-[var(--line)] text-center">
-            <p className="text-[var(--sea-ink-soft)] text-sm">
+          <div className="mt-8 pt-6 border-t border-(--line) text-center">
+            <p className="text-(--sea-ink-soft) text-sm">
               Don't have an account?{' '}
               <Link to="/signup" className="text-violet-600 dark:text-violet-400 font-medium hover:underline">
                 Start weaving for free

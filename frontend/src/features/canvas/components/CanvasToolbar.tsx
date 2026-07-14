@@ -38,7 +38,11 @@ const NODE_BUTTONS: { type: StoryNodeType; label: string; icon: React.ReactNode;
  */
 export function CanvasToolbar({ storyTitle = 'Untitled Story' }: CanvasToolbarProps) {
   const { zoomIn, zoomOut, fitView } = useReactFlow();
-  const { addNode, deleteNode, selectedNodeId, saveCanvas, setNodes } = useCanvasStore();
+  const addNode = useCanvasStore(state => state.addNode)
+  const deleteNode = useCanvasStore(state => state.deleteNode)
+  const selectedNodeId = useCanvasStore(state => state.selectedNodeId)
+  const saveCanvas = useCanvasStore(state => state.saveCanvas)
+  const setNodes = useCanvasStore(state => state.setNodes)
   const [isSaving, setIsSaving] = useState(false);
 
   const handleAddNode = (type: StoryNodeType) => {

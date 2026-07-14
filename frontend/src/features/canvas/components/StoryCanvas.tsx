@@ -17,6 +17,9 @@ import { StoryBeatNode } from '#/features/canvas/components/nodes/StoryBeatNode'
 import { CharacterNode } from '#/features/canvas/components/nodes/CharacterNode';
 import { WorldRuleNode } from '#/features/canvas/components/nodes/WorldRuleNode';
 import { useUnsavedChangesWarning } from '#/features/canvas/hooks/useUnsavedChangesWarning';
+import { computeAutoLayout } from '#/features/canvas/utils/autoLayout';
+import { useReactFlow } from '@xyflow/react';
+import { useState } from 'react';
 
 /** Stable node type map — defined outside component to prevent remount on re-render. */
 const NODE_TYPES = {
@@ -26,23 +29,45 @@ const NODE_TYPES = {
 } as const;
 
 /**
+ * Invisible helper component to run auto-layout once when a story is first loaded.
+ */
+function AutoLayoutOnLoad() {
+  const { fitView } = useReactFlow();
+  const nodes = useCanvasStore(state => state.nodes)
+  const edges = useCanvasStore(state => state.edges)
+  const setNodes = useCanvasStore(state => state.setNodes)
+  const storyId = useCanvasStore(state => state.storyId)
+  const [lastLayoutId, setLastLayoutId] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Only layout once per story load when nodes are populated
+    if (storyId && storyId !== lastLayoutId && nodes.length > 0) {
+      const laid = computeAutoLayout(nodes, edges);
+      setNodes(laid);
+      setLastLayoutId(storyId);
+      // Wait a tick for nodes to render their new positions before fitting
+      setTimeout(() => fitView({ padding: 0.2, duration: 500 }), 50);
+    }
+  }, [storyId, nodes.length, edges, lastLayoutId, setNodes, fitView]);
+
+  return null;
+}
+
+/**
  * Main story canvas page. Renders the ReactFlow canvas with custom nodes,
  * a collapsible nodes sidebar, a floating toolbar, minimap, and background grid.
  */
 export function StoryCanvas() {
   const { storyId } = useParams({ from: '/canvas/$storyId' });
-
-  const {
-    nodes,
-    edges,
-    onNodesChange,
-    onEdgesChange,
-    onConnect,
-    setSelectedNodeId,
-    loadCanvas,
-    saveCanvas,
-    setStoryId,
-  } = useCanvasStore();
+  const nodes = useCanvasStore(state => state.nodes)
+  const edges = useCanvasStore(state => state.edges)
+  const onNodesChange = useCanvasStore(state => state.onNodesChange)
+  const onEdgesChange = useCanvasStore(state => state.onEdgesChange)
+  const onConnect = useCanvasStore(state => state.onConnect)
+  const setSelectedNodeId = useCanvasStore(state => state.setSelectedNodeId)
+  const loadCanvas = useCanvasStore(state => state.loadCanvas)
+  const saveCanvas = useCanvasStore(state => state.saveCanvas)
+  const setStoryId = useCanvasStore(state => state.setStoryId)
 
   // Enable unsaved changes warning
   useUnsavedChangesWarning();
@@ -102,6 +127,8 @@ export function StoryCanvas() {
           style: { strokeWidth: 2, stroke: 'var(--lagoon)' },
         }}
       >
+        <AutoLayoutOnLoad />
+
         {/* Sidebar inside ReactFlow so useReactFlow() context is available */}
         <NodesSidebar />
 

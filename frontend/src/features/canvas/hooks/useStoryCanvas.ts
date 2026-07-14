@@ -81,7 +81,9 @@ export function useUpdateNode() {
     },
     onSuccess: (data) => {
       if (data.story_id) {
-        queryClient.invalidateQueries({ queryKey: ['story-nodes', data.story_id] })
+        queryClient.invalidateQueries({
+          queryKey: ['story-nodes', data.story_id],
+        })
       }
     },
   })
