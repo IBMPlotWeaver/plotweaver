@@ -62,6 +62,7 @@ export function StoryCanvas() {
     if (!storyId) return;
 
     const interval = setInterval(() => {
+      if (!useCanvasStore.getState().hasUnsavedChanges) return;
       saveCanvas().catch((error) => {
         console.error('Auto-save failed:', error);
       });
