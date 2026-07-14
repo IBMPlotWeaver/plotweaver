@@ -15,8 +15,9 @@ export function useCurrentUser() {
   return useQuery({
     queryKey: CURRENT_USER_QUERY_KEY,
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      return user
+      const { data, error } = await supabase.auth.getUser()
+      if (error) throw error
+      return data.user
     },
     // Auth state is stable — treat as fresh for 5 minutes.
     staleTime: 5 * 60 * 1000,
