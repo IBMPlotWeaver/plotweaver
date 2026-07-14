@@ -183,11 +183,15 @@ export const useCanvasStore = create<
 
       if (edgesError) throw edgesError
 
-      // Fetch node_characters relationships
-      const { data: nodeCharacters, error: ncError } = await supabase
-        .from('node_characters')
-        .select('node_id, character_id')
-
+      // Fetch node_characters relationships (scoped to nodes in this story)
+      const storyNodeIds = storyNodes?.map((n) => n.id) ?? []
+      const { data: nodeCharacters, error: ncError } =
+        storyNodeIds.length > 0
+          ? await supabase
+              .from('node_characters')
+              .select('node_id, character_id')
+              .in('node_id', storyNodeIds)
+          : { data: [], error: null }
       if (ncError) throw ncError
 
       // Fetch AI insights to check for warnings
