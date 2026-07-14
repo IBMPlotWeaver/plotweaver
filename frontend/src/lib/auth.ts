@@ -3,7 +3,10 @@ import type { User } from '@supabase/supabase-js'
 
 export async function getCurrentUser(): Promise<User | null> {
   const { data, error } = await supabase.auth.getUser()
-  if (error) throw error
+  if (error) {
+    // If there's no session, getUser returns an error. We should return null instead of throwing.
+    return null
+  }
   return data.user
 }
 
