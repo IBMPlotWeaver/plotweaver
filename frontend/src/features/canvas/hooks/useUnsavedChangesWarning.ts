@@ -3,7 +3,7 @@ import { useBlocker } from '@tanstack/react-router';
 import { useCanvasStore } from '#/features/canvas/store/useCanvasStore';
 
 export function useUnsavedChangesWarning() {
-  const { hasUnsavedChanges } = useCanvasStore();
+  const hasUnsavedChanges = useCanvasStore((state) => state.hasUnsavedChanges)
 
   // 1. Block client-side navigation (TanStack Router)
   useBlocker({
