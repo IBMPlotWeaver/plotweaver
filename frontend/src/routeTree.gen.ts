@@ -9,86 +9,201 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SignupRouteImport } from './routes/signup'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as IndexRouteImport } from './routes/index'
+import { Route as LayoutRouteImport } from './routes/_layout'
+import { Route as DashboardLayoutRouteImport } from './routes/_dashboard-layout'
+import { Route as LayoutIndexRouteImport } from './routes/_layout/index'
+import { Route as CanvasStoryIdRouteImport } from './routes/canvas.$storyId'
+import { Route as LayoutSignupRouteImport } from './routes/_layout/signup'
+import { Route as LayoutLoginRouteImport } from './routes/_layout/login'
+import { Route as DashboardLayoutProfileRouteImport } from './routes/_dashboard-layout/profile'
+import { Route as DashboardLayoutDashboardRouteImport } from './routes/_dashboard-layout/dashboard'
 
-const SignupRoute = SignupRouteImport.update({
-  id: '/signup',
-  path: '/signup',
+const LayoutRoute = LayoutRouteImport.update({
+  id: '/_layout',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
+const DashboardLayoutRoute = DashboardLayoutRouteImport.update({
+  id: '/_dashboard-layout',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
+const LayoutIndexRoute = LayoutIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const CanvasStoryIdRoute = CanvasStoryIdRouteImport.update({
+  id: '/canvas/$storyId',
+  path: '/canvas/$storyId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LayoutSignupRoute = LayoutSignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutLoginRoute = LayoutLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const DashboardLayoutProfileRoute = DashboardLayoutProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => DashboardLayoutRoute,
+} as any)
+const DashboardLayoutDashboardRoute =
+  DashboardLayoutDashboardRouteImport.update({
+    id: '/dashboard',
+    path: '/dashboard',
+    getParentRoute: () => DashboardLayoutRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/login': typeof LoginRoute
-  '/signup': typeof SignupRoute
+  '/': typeof LayoutIndexRoute
+  '/dashboard': typeof DashboardLayoutDashboardRoute
+  '/profile': typeof DashboardLayoutProfileRoute
+  '/login': typeof LayoutLoginRoute
+  '/signup': typeof LayoutSignupRoute
+  '/canvas/$storyId': typeof CanvasStoryIdRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/login': typeof LoginRoute
-  '/signup': typeof SignupRoute
+  '/': typeof LayoutIndexRoute
+  '/dashboard': typeof DashboardLayoutDashboardRoute
+  '/profile': typeof DashboardLayoutProfileRoute
+  '/login': typeof LayoutLoginRoute
+  '/signup': typeof LayoutSignupRoute
+  '/canvas/$storyId': typeof CanvasStoryIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/login': typeof LoginRoute
-  '/signup': typeof SignupRoute
+  '/_dashboard-layout': typeof DashboardLayoutRouteWithChildren
+  '/_layout': typeof LayoutRouteWithChildren
+  '/_dashboard-layout/dashboard': typeof DashboardLayoutDashboardRoute
+  '/_dashboard-layout/profile': typeof DashboardLayoutProfileRoute
+  '/_layout/login': typeof LayoutLoginRoute
+  '/_layout/signup': typeof LayoutSignupRoute
+  '/canvas/$storyId': typeof CanvasStoryIdRoute
+  '/_layout/': typeof LayoutIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/signup'
+  fullPaths:
+    '/' | '/dashboard' | '/profile' | '/login' | '/signup' | '/canvas/$storyId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/signup'
-  id: '__root__' | '/' | '/login' | '/signup'
+  to:
+    '/' | '/dashboard' | '/profile' | '/login' | '/signup' | '/canvas/$storyId'
+  id:
+    | '__root__'
+    | '/_dashboard-layout'
+    | '/_layout'
+    | '/_dashboard-layout/dashboard'
+    | '/_dashboard-layout/profile'
+    | '/_layout/login'
+    | '/_layout/signup'
+    | '/canvas/$storyId'
+    | '/_layout/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  LoginRoute: typeof LoginRoute
-  SignupRoute: typeof SignupRoute
+  DashboardLayoutRoute: typeof DashboardLayoutRouteWithChildren
+  LayoutRoute: typeof LayoutRouteWithChildren
+  CanvasStoryIdRoute: typeof CanvasStoryIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/signup': {
-      id: '/signup'
-      path: '/signup'
-      fullPath: '/signup'
-      preLoaderRoute: typeof SignupRouteImport
+    '/_layout': {
+      id: '/_layout'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof LayoutRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
+    '/_dashboard-layout': {
+      id: '/_dashboard-layout'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof DashboardLayoutRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
+    '/_layout/': {
+      id: '/_layout/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+      preLoaderRoute: typeof LayoutIndexRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/canvas/$storyId': {
+      id: '/canvas/$storyId'
+      path: '/canvas/$storyId'
+      fullPath: '/canvas/$storyId'
+      preLoaderRoute: typeof CanvasStoryIdRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_layout/signup': {
+      id: '/_layout/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof LayoutSignupRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/login': {
+      id: '/_layout/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LayoutLoginRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_dashboard-layout/profile': {
+      id: '/_dashboard-layout/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof DashboardLayoutProfileRouteImport
+      parentRoute: typeof DashboardLayoutRoute
+    }
+    '/_dashboard-layout/dashboard': {
+      id: '/_dashboard-layout/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardLayoutDashboardRouteImport
+      parentRoute: typeof DashboardLayoutRoute
     }
   }
 }
 
+interface DashboardLayoutRouteChildren {
+  DashboardLayoutDashboardRoute: typeof DashboardLayoutDashboardRoute
+  DashboardLayoutProfileRoute: typeof DashboardLayoutProfileRoute
+}
+
+const DashboardLayoutRouteChildren: DashboardLayoutRouteChildren = {
+  DashboardLayoutDashboardRoute: DashboardLayoutDashboardRoute,
+  DashboardLayoutProfileRoute: DashboardLayoutProfileRoute,
+}
+
+const DashboardLayoutRouteWithChildren = DashboardLayoutRoute._addFileChildren(
+  DashboardLayoutRouteChildren,
+)
+
+interface LayoutRouteChildren {
+  LayoutLoginRoute: typeof LayoutLoginRoute
+  LayoutSignupRoute: typeof LayoutSignupRoute
+  LayoutIndexRoute: typeof LayoutIndexRoute
+}
+
+const LayoutRouteChildren: LayoutRouteChildren = {
+  LayoutLoginRoute: LayoutLoginRoute,
+  LayoutSignupRoute: LayoutSignupRoute,
+  LayoutIndexRoute: LayoutIndexRoute,
+}
+
+const LayoutRouteWithChildren =
+  LayoutRoute._addFileChildren(LayoutRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  LoginRoute: LoginRoute,
-  SignupRoute: SignupRoute,
+  DashboardLayoutRoute: DashboardLayoutRouteWithChildren,
+  LayoutRoute: LayoutRouteWithChildren,
+  CanvasStoryIdRoute: CanvasStoryIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

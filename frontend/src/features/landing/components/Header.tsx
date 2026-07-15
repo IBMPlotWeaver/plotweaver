@@ -3,6 +3,9 @@ import { useThemeStore } from '#/features/store/useThemeStore';
 import { Moon, Sun } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 
+/**
+ * Floating header for public/guest pages (landing, login, signup).
+ */
 export function Header() {
   const { theme, toggleTheme } = useThemeStore();
 
@@ -20,11 +23,11 @@ export function Header() {
             {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
             <span className="sr-only">Toggle theme</span>
           </Button>
-          <Link to="/login" className="text-sm font-medium hover:text-violet-600 dark:hover:text-violet-400 transition-colors">
+          <Link to="/login" className="text-sm font-medium text-(--sea-ink-soft) hover:text-violet-600 dark:hover:text-violet-400 transition-colors">
             Log In
           </Link>
           <Link to="/signup">
-            <Button className="bg-violet-600 hover:bg-violet-700 text-white rounded-full px-6 shadow-md shadow-violet-500/20">
+            <Button className="bg-violet-600 hover:bg-violet-700 text-white rounded-full px-6 shadow-md shadow-violet-500/20 border-none">
               Get Started
             </Button>
           </Link>
