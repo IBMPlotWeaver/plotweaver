@@ -18,6 +18,7 @@ import { CharacterNode } from '#/features/canvas/components/nodes/CharacterNode'
 import { WorldRuleNode } from '#/features/canvas/components/nodes/WorldRuleNode';
 import { useUnsavedChangesWarning } from '#/features/canvas/hooks/useUnsavedChangesWarning';
 import { computeAutoLayout } from '#/features/canvas/utils/autoLayout';
+import { AIInsightsPanel } from '#/features/canvas/components/AIInsightsPanel';
 import { useReactFlow } from '@xyflow/react';
 import { useState } from 'react';
 
@@ -134,6 +135,9 @@ export function StoryCanvas() {
 
         {/* Toolbar floats at top-center */}
         <CanvasToolbar storyTitle={`Story — ${storyId}`} />
+
+        {/* AI Insights panel — slides in from the right */}
+        <AIInsightsPanel />
 
         <Background
           variant={BackgroundVariant.Dots}
