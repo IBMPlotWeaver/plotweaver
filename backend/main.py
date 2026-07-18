@@ -53,7 +53,7 @@ def get_granite_model() -> ModelInference:
 
     credentials = Credentials(api_key=api_key, url=url)
     return ModelInference(
-        model_id="ibm/granite-3-3-8b-instruct",
+        model_id="ibm/granite-4-h-small",
         credentials=credentials,
         project_id=project_id,
         params={
