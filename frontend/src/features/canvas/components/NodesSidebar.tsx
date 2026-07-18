@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useReactFlow, Panel } from '@xyflow/react';
-import { BookOpen, User, Shield, ChevronRight, PanelLeftOpen, PanelLeftClose, Hash, MapPin, Code, Copy, Check } from 'lucide-react';
+import { BookOpen, User, Shield, ChevronRight, PanelLeftOpen, PanelLeftClose, Hash, MapPin, Code, Copy, Check, Layers } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
@@ -37,29 +37,31 @@ function JsonModal({ open, onClose }: { open: boolean; onClose: () => void }) {
       <DialogContent className="max-w-3xl w-[90vw] max-h-[90vh] overflow-hidden flex flex-col bg-(--surface) border-(--line) text-(--sea-ink)">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-(--sea-ink)">
-            <Code className="w-4 h-4 text-violet-500" />
-            Canvas JSON
+            <Code className="w-5 h-5 text-violet-500" />
+            Canvas JSON Export
           </DialogTitle>
         </DialogHeader>
-        <div className="flex-1 flex flex-col gap-2 min-h-0">
-          <p className="text-xs text-(--sea-ink-soft) shrink-0">
-            {nodes.length} node{nodes.length !== 1 ? 's' : ''} · {edges.length} edge{edges.length !== 1 ? 's' : ''}
-          </p>
+        <div className="flex-1 flex flex-col gap-3 min-h-0">
+          <div className="flex items-center justify-between px-1">
+            <p className="text-xs text-(--sea-ink-soft)">
+              {nodes.length} node{nodes.length !== 1 ? 's' : ''} · {edges.length} edge{edges.length !== 1 ? 's' : ''}
+            </p>
+            <button
+              onClick={handleCopy}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold transition-colors cursor-pointer shadow-md"
+              title="Copy to clipboard"
+            >
+              {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+              {copied ? 'Copied!' : 'Copy JSON'}
+            </button>
+          </div>
           <div className="relative flex-1 min-h-0">
             <textarea
               readOnly
               wrap="off"
-              className="w-full h-full min-h-150 resize-none rounded-xl bg-zinc-950 text-zinc-200 text-xs p-4 pt-12 leading-relaxed outline-none custom-scrollbar"
+              className="w-full h-full min-h-150 resize-none rounded-xl bg-zinc-950 text-zinc-200 text-xs p-4 leading-relaxed outline-none custom-scrollbar font-mono"
               value={json}
             />
-            <button
-              onClick={handleCopy}
-              className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-medium transition-colors cursor-pointer"
-              title="Copy to clipboard"
-            >
-              {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-              {copied ? 'Copied!' : 'Copy'}
-            </button>
           </div>
         </div>
       </DialogContent>
@@ -72,9 +74,163 @@ interface NodeSection<T> {
   icon: React.ReactNode;
   accentClass: string;
   badgeClass: string;
+  bgClass: string;
+  borderClass: string;
   nodes: { id: string; data: T }[];
   renderTitle: (data: T) => string;
   renderSub?: (data: T) => string | undefined;
+}
+
+/**
+ * Sidebar content component - shared between mobile sheet and desktop panel
+ */
+function NodesSidebarContent({ onItemClick }: { onItemClick: (id: string) => void }) {
+  const { nodes, selectedNodeId } = useCanvasStore();
+  const [jsonOpen, setJsonOpen] = useState(false);
+
+  const storyBeats = nodes.filter((n) => n.type === 'storyBeat');
+  const characters = nodes.filter((n) => n.type === 'character');
+  const worldRules = nodes.filter((n) => n.type === 'worldRule');
+
+  const sections: NodeSection<StoryBeatNodeData | CharacterNodeData | WorldRuleNodeData>[] = [
+    {
+      label: 'Story Beats',
+      icon: <BookOpen className="w-4 h-4" />,
+      accentClass: 'text-violet-600 dark:text-violet-400',
+      badgeClass: 'bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300',
+      bgClass: 'bg-violet-50 dark:bg-violet-900/20',
+      borderClass: 'border-violet-200 dark:border-violet-800',
+      nodes: storyBeats as { id: string; data: StoryBeatNodeData }[],
+      renderTitle: (d) => (d as StoryBeatNodeData).title,
+      renderSub: (d) => (d as StoryBeatNodeData).location || undefined,
+    },
+    {
+      label: 'Characters',
+      icon: <User className="w-4 h-4" />,
+      accentClass: 'text-fuchsia-600 dark:text-fuchsia-400',
+      badgeClass: 'bg-fuchsia-100 dark:bg-fuchsia-900/40 text-fuchsia-700 dark:text-fuchsia-300',
+      bgClass: 'bg-fuchsia-50 dark:bg-fuchsia-900/20',
+      borderClass: 'border-fuchsia-200 dark:border-fuchsia-800',
+      nodes: characters as { id: string; data: CharacterNodeData }[],
+      renderTitle: (d) => (d as CharacterNodeData).name,
+      renderSub: (d) => (d as CharacterNodeData).role || undefined,
+    },
+    {
+      label: 'World Rules',
+      icon: <Shield className="w-4 h-4" />,
+      accentClass: 'text-indigo-600 dark:text-indigo-400',
+      badgeClass: 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300',
+      bgClass: 'bg-indigo-50 dark:bg-indigo-900/20',
+      borderClass: 'border-indigo-200 dark:border-indigo-800',
+      nodes: worldRules as { id: string; data: WorldRuleNodeData }[],
+      renderTitle: (d) => (d as WorldRuleNodeData).title,
+    },
+  ];
+
+  const totalCount = nodes.length;
+
+  return (
+    <>
+      <JsonModal open={jsonOpen} onClose={() => setJsonOpen(false)} />
+
+      <div className="flex flex-col h-full overflow-hidden">
+        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-5 custom-scrollbar">
+          {totalCount === 0 ? (
+            <div className="flex flex-col items-center justify-center h-40 gap-3 text-center px-4">
+              <div className="w-14 h-14 rounded-2xl bg-linear-to-br from-violet-100 to-fuchsia-100 dark:from-violet-900/40 dark:to-fuchsia-900/40 flex items-center justify-center">
+                <Layers className="w-7 h-7 text-violet-500" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-semibold text-(--sea-ink)">No nodes yet</p>
+                <p className="text-xs text-(--sea-ink-soft) opacity-70 leading-relaxed">
+                  Add nodes from the toolbar above to start building your story.
+                </p>
+              </div>
+            </div>
+          ) : (
+            sections.map((section) => (
+              <div key={section.label}>
+                {/* Section header */}
+                <div className="flex items-center gap-2 mb-3 px-1">
+                  <span className={section.accentClass}>{section.icon}</span>
+                  <span className="text-xs font-bold uppercase tracking-wider text-(--sea-ink)">
+                    {section.label}
+                  </span>
+                  <span className={`ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full ${section.badgeClass}`}>
+                    {section.nodes.length}
+                  </span>
+                </div>
+
+                {section.nodes.length === 0 ? (
+                  <p className="text-xs text-(--sea-ink-soft) px-3 py-2 opacity-60 italic">None added yet</p>
+                ) : (
+                  <ul className="space-y-2">
+                    {section.nodes.map((node) => {
+                      const title = section.renderTitle(node.data);
+                      const sub = section.renderSub?.(node.data);
+                      const isSelected = selectedNodeId === node.id;
+
+                      return (
+                        <li key={node.id}>
+                          <button
+                            onClick={() => onItemClick(node.id)}
+                            className={`w-full text-left flex items-center gap-2 px-3 py-2.5 rounded-xl transition-all duration-150 group cursor-pointer border-2 ${isSelected
+                              ? `${section.bgClass} ${section.borderClass} shadow-md`
+                              : 'hover:bg-(--line) border-transparent hover:border-(--line)'
+                              }`}
+                          >
+                            <div className="flex-1 min-w-0">
+                              <p
+                                className={`text-sm font-semibold truncate ${isSelected ? section.accentClass : 'text-(--sea-ink)'
+                                  }`}
+                              >
+                                {/* Beat-specific: show timeline order */}
+                                {node.data.type === 'storyBeat' && (
+                                  <span className={`inline-flex items-center gap-0.5 mr-1.5 text-[10px] font-bold ${section.accentClass}`}>
+                                    <Hash className="w-3 h-3" />
+                                    {(node.data as StoryBeatNodeData).timelineOrder}
+                                  </span>
+                                )}
+                                {title}
+                              </p>
+                              {sub && (
+                                <p className="text-xs text-(--sea-ink-soft) truncate flex items-center gap-1 mt-1">
+                                  {node.data.type === 'storyBeat' && <MapPin className="w-3 h-3 shrink-0" />}
+                                  {sub}
+                                </p>
+                              )}
+                            </div>
+                            <ChevronRight
+                              className={`w-4 h-4 shrink-0 transition-all ${isSelected
+                                ? `${section.accentClass} translate-x-0.5`
+                                : 'text-(--sea-ink-soft) opacity-0 group-hover:opacity-100'
+                                }`}
+                            />
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Export JSON footer */}
+        <div className="shrink-0 px-4 py-3 border-t border-(--line)">
+          <button
+            onClick={() => setJsonOpen(true)}
+            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-semibold text-(--sea-ink) hover:text-violet-600 dark:hover:text-violet-400 bg-(--surface) hover:bg-violet-50 dark:hover:bg-violet-900/20 border-2 border-(--line) hover:border-violet-200 dark:hover:border-violet-800 transition-all cursor-pointer"
+            title="Export canvas as JSON"
+          >
+            <Code className="w-4 h-4" />
+            Export JSON
+          </button>
+        </div>
+      </div>
+    </>
+  );
 }
 
 /**
@@ -82,14 +238,11 @@ interface NodeSection<T> {
  * Clicking a node focuses the canvas viewport on it.
  */
 export function NodesSidebar() {
-  const { nodes, selectedNodeId, setSelectedNodeId } = useCanvasStore();
+  const { nodes, setSelectedNodeId } = useCanvasStore();
   const { fitBounds, getNode } = useReactFlow();
   const [open, setOpen] = useState(false);
-  const [jsonOpen, setJsonOpen] = useState(false);
 
-  const storyBeats = nodes.filter((n) => n.type === 'storyBeat');
-  const characters = nodes.filter((n) => n.type === 'character');
-  const worldRules = nodes.filter((n) => n.type === 'worldRule');
+  const totalCount = nodes.length;
 
   const focusNode = (id: string) => {
     const node = getNode(id);
@@ -111,151 +264,39 @@ export function NodesSidebar() {
     if (window.innerWidth < 768) setOpen(false);
   };
 
-  const sections: NodeSection<StoryBeatNodeData | CharacterNodeData | WorldRuleNodeData>[] = [
-    {
-      label: 'Story Beats',
-      icon: <BookOpen className="w-4 h-4" />,
-      accentClass: 'text-violet-600 dark:text-violet-400',
-      badgeClass: 'bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300',
-      nodes: storyBeats as { id: string; data: StoryBeatNodeData }[],
-      renderTitle: (d) => (d as StoryBeatNodeData).title,
-      renderSub: (d) => (d as StoryBeatNodeData).location || undefined,
-    },
-    {
-      label: 'Characters',
-      icon: <User className="w-4 h-4" />,
-      accentClass: 'text-fuchsia-600 dark:text-fuchsia-400',
-      badgeClass: 'bg-fuchsia-100 dark:bg-fuchsia-900/40 text-fuchsia-700 dark:text-fuchsia-300',
-      nodes: characters as { id: string; data: CharacterNodeData }[],
-      renderTitle: (d) => (d as CharacterNodeData).name,
-      renderSub: (d) => (d as CharacterNodeData).role || undefined,
-    },
-    {
-      label: 'World Rules',
-      icon: <Shield className="w-4 h-4" />,
-      accentClass: 'text-indigo-600 dark:text-indigo-400',
-      badgeClass: 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300',
-      nodes: worldRules as { id: string; data: WorldRuleNodeData }[],
-      renderTitle: (d) => (d as WorldRuleNodeData).title,
-    },
-  ];
-
-  const totalCount = nodes.length;
-
-  const SidebarContent = () => (
-    <div className="flex flex-col h-full overflow-hidden">
-      <div className="flex-1 overflow-y-auto px-4 py-2 space-y-4 custom-scrollbar">
-        {totalCount === 0 ? (
-          <div className="flex flex-col items-center justify-center h-40 gap-2 text-center">
-            <p className="text-sm text-(--sea-ink-soft)">No nodes yet.</p>
-            <p className="text-xs text-(--sea-ink-soft) opacity-70">Add nodes from the toolbar above.</p>
-          </div>
-        ) : (
-          sections.map((section) => (
-            <div key={section.label}>
-              {/* Section header */}
-              <div className="flex items-center gap-2 mb-2 px-1">
-                <span className={section.accentClass}>{section.icon}</span>
-                <span className="text-xs font-semibold uppercase tracking-widest text-(--sea-ink-soft)">
-                  {section.label}
-                </span>
-                <span className={`ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full ${section.badgeClass}`}>
-                  {section.nodes.length}
-                </span>
-              </div>
-
-              {section.nodes.length === 0 ? (
-                <p className="text-xs text-(--sea-ink-soft) px-2 py-1 opacity-60">None added yet</p>
-              ) : (
-                <ul className="space-y-1">
-                  {section.nodes.map((node) => {
-                    const title = section.renderTitle(node.data);
-                    const sub = section.renderSub?.(node.data);
-                    const isSelected = selectedNodeId === node.id;
-
-                    return (
-                      <li key={node.id}>
-                        <button
-                          onClick={() => handleItemClick(node.id)}
-                          className={`w-full text-left flex items-center gap-2 px-3 py-2.5 rounded-xl transition-all duration-150 group cursor-pointer ${isSelected
-                            ? 'bg-violet-100 dark:bg-violet-900/40 border border-violet-300 dark:border-violet-700'
-                            : 'hover:bg-(--line) border border-transparent'
-                            }`}
-                        >
-                          <div className="flex-1 min-w-0">
-                            <p
-                              className={`text-sm font-medium truncate ${isSelected ? 'text-violet-700 dark:text-violet-300' : 'text-(--sea-ink)'
-                                }`}
-                            >
-                              {/* Beat-specific: show timeline order */}
-                              {node.data.type === 'storyBeat' && (
-                                <span className="inline-flex items-center gap-0.5 mr-1 text-[10px] font-bold text-violet-500">
-                                  <Hash className="w-2.5 h-2.5" />
-                                  {(node.data as StoryBeatNodeData).timelineOrder}
-                                </span>
-                              )}
-                              {title}
-                            </p>
-                            {sub && (
-                              <p className="text-xs text-(--sea-ink-soft) truncate flex items-center gap-1 mt-0.5">
-                                {node.data.type === 'storyBeat' && <MapPin className="w-2.5 h-2.5 shrink-0" />}
-                                {sub}
-                              </p>
-                            )}
-                          </div>
-                          <ChevronRight
-                            className={`w-3.5 h-3.5 shrink-0 transition-transform ${isSelected
-                              ? 'text-violet-500 translate-x-0.5'
-                              : 'text-(--sea-ink-soft) opacity-0 group-hover:opacity-100'
-                              }`}
-                          />
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </div>
-          ))
-        )}
-      </div>
-
-      {/* Get JSON footer */}
-      <div className="shrink-0 px-4 py-3 border-t border-(--line)">
-        <button
-          onClick={() => setJsonOpen(true)}
-          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-(--sea-ink-soft) hover:bg-(--line) hover:text-(--sea-ink) transition-colors cursor-pointer border border-(--line)"
-          title="Export canvas as JSON"
-        >
-          <Code className="w-3.5 h-3.5" />
-          Get JSON
-        </button>
-      </div>
-    </div>
-  );
-
   return (
     <>
-      <JsonModal open={jsonOpen} onClose={() => setJsonOpen(false)} />
-
       {/* Mobile: Sheet trigger via Panel (bottom-left) */}
-      <Panel position="bottom-left" className="md:hidden mb-14">
+      <Panel position="bottom-left" className="md:hidden mb-14 ml-4">
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
             <button
-              className="island-shell flex items-center gap-2 px-3 py-2.5 rounded-full text-sm font-medium text-(--sea-ink) shadow-lg transition-colors cursor-pointer"
+              className="island-shell flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold text-(--sea-ink) shadow-lg hover:shadow-xl transition-all cursor-pointer bg-linear-to-br from-(--surface) to-violet-50 dark:to-violet-900/20 border-2 border-(--line)"
               title="Open node list"
             >
-              <PanelLeftOpen className="w-4 h-4" />
-              <span>Nodes ({totalCount})</span>
+              <Layers className="w-4 h-4" />
+              <span>Nodes</span>
+              {totalCount > 0 && (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300">
+                  {totalCount}
+                </span>
+              )}
             </button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-72 p-0 border-(--line) bg-(--surface) flex flex-col">
+          <SheetContent side="left" className="w-80 p-0 border-(--line) bg-(--surface) flex flex-col">
             <SheetHeader className="px-4 pt-5 pb-3 border-b border-(--line)">
-              <SheetTitle className="text-base text-(--sea-ink)">Canvas Nodes</SheetTitle>
+              <SheetTitle className="flex items-center gap-2 text-base text-(--sea-ink)">
+                <Layers className="w-5 h-5 text-violet-500" />
+                Canvas Nodes
+                {totalCount > 0 && (
+                  <span className="ml-auto text-sm text-(--sea-ink-soft) font-normal">
+                    ({totalCount})
+                  </span>
+                )}
+              </SheetTitle>
             </SheetHeader>
             <div className="flex-1 overflow-hidden">
-              <SidebarContent />
+              <NodesSidebarContent onItemClick={handleItemClick} />
             </div>
           </SheetContent>
         </Sheet>
@@ -263,9 +304,7 @@ export function NodesSidebar() {
 
       {/* Desktop: Collapsible Panel sidebar (left) */}
       <Panel position="top-left" className="hidden md:flex m-0! p-0! top-0 bottom-0 h-full">
-        <DesktopSidebar totalCount={totalCount} selectedNodeId={selectedNodeId}>
-          <SidebarContent />
-        </DesktopSidebar>
+        <DesktopSidebar totalCount={totalCount} onItemClick={handleItemClick} />
       </Panel>
     </>
   );
@@ -273,29 +312,36 @@ export function NodesSidebar() {
 
 interface DesktopSidebarProps {
   totalCount: number;
-  selectedNodeId: string | null;
-  children: React.ReactNode;
+  onItemClick: (id: string) => void;
 }
 
-function DesktopSidebar({ totalCount, children }: DesktopSidebarProps) {
+function DesktopSidebar({ totalCount, onItemClick }: DesktopSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
 
   return (
     <div
-      className={`flex flex-col h-screen transition-all duration-300 ease-in-out ${collapsed ? 'w-12' : 'w-64'
+      className={`flex flex-col h-screen transition-all duration-300 ease-in-out ${collapsed ? 'w-14' : 'w-72'
         }`}
     >
-      <div className="island-shell h-full flex flex-col rounded-none rounded-r-2xl border-l-0 overflow-hidden shadow-xl">
+      <div className="island-shell h-full flex flex-col rounded-none rounded-r-2xl border-l-0 overflow-hidden shadow-2xl">
         {/* Header */}
-        <div className="flex items-center gap-2 px-3 py-4 border-b border-(--line) shrink-0">
+        <div className="flex items-center gap-2 px-4 py-4 border-b border-(--line) shrink-0">
           {!collapsed && (
-            <span className="flex-1 text-sm font-semibold text-(--sea-ink) truncate">
-              Nodes <span className="text-(--sea-ink-soft) font-normal">({totalCount})</span>
-            </span>
+            <>
+              <Layers className="w-5 h-5 text-violet-500 shrink-0" />
+              <span className="flex-1 text-sm font-semibold text-(--sea-ink) truncate">
+                Canvas Nodes
+              </span>
+              {totalCount > 0 && (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300">
+                  {totalCount}
+                </span>
+              )}
+            </>
           )}
           <button
             onClick={() => setCollapsed((c) => !c)}
-            className="p-1.5 rounded-lg text-[var(--sea-ink-soft) hover:bg-[var(--line) transition-colors cursor-pointer shrink-0 ml-auto"
+            className="p-2 rounded-lg text-(--sea-ink-soft) hover:bg-(--line) hover:text-(--sea-ink) transition-all cursor-pointer shrink-0 ml-auto"
             title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             {collapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
@@ -305,16 +351,22 @@ function DesktopSidebar({ totalCount, children }: DesktopSidebarProps) {
         {/* Content */}
         {!collapsed && (
           <div className="flex-1 overflow-hidden">
-            {children}
+            <NodesSidebarContent onItemClick={onItemClick} />
           </div>
         )}
 
         {/* Collapsed icons */}
         {collapsed && (
-          <div className="flex flex-col items-center gap-3 pt-4">
-            <BookOpen className="w-4 h-4 text-violet-500" />
-            <User className="w-4 h-4 text-fuchsia-500" />
-            <Shield className="w-4 h-4 text-indigo-500" />
+          <div className="flex flex-col items-center gap-4 pt-6">
+            <div className="w-10 h-10 rounded-xl bg-violet-50 dark:bg-violet-900/20 flex items-center justify-center">
+              <BookOpen className="w-5 h-5 text-violet-500" />
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-fuchsia-50 dark:bg-fuchsia-900/20 flex items-center justify-center">
+              <User className="w-5 h-5 text-fuchsia-500" />
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center">
+              <Shield className="w-5 h-5 text-indigo-500" />
+            </div>
           </div>
         )}
       </div>
