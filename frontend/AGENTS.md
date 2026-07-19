@@ -267,6 +267,158 @@ Files prefixed with `demo` can be safely deleted. They are provided as examples 
 - Database types generated in `src/types/database.types.ts`
 - Use `supabase` CLI for local development and migrations
 
+## AI Integration
+
+### Overview
+
+PlotWeaver integrates with a FastAPI backend that uses IBM's Granite AI models to analyze story content. The AI acts as a **Creative Partner**, not a writer, helping authors identify issues and maintain consistency.
+
+### Architecture
+
+**Frontend (React + TanStack Query)**:
+- `src/features/canvas/hooks/useAIAnalysis.ts` - Custom hooks for AI operations
+- `src/features/canvas/components/AIInsightsPanel.tsx` - UI for displaying insights
+- Zustand store (`useCanvasStore`) manages canvas state and node data
+
+**Backend Communication**:
+- Backend URL configured via `VITE_BACKEND_URL` environment variable
+- Defaults to `http://localhost:8000` for local development
+- Uses standard fetch API for HTTP requests
+
+### AI Analysis Features
+
+**1. Continuity Checking**
+- Detects contradictions between story beats
+- Tracks character consistency across scenes
+- Identifies timeline inconsistencies
+
+**2. World Rule Validation**
+- Ensures story events follow user-defined world rules
+- Flags violations of established magic systems, physics, etc.
+
+**3. Character Arc Analysis**
+- Monitors character development and consistency
+- Detects out-of-character behavior
+
+**4. Plot Hole Detection**
+- Identifies logical gaps in the narrative
+- Suggests areas needing clarification
+
+**5. Pacing Analysis**
+- Evaluates story rhythm and flow
+- Highlights potential pacing issues
+
+### Data Flow
+
+1. **User triggers analysis** via "Run AI Analysis" button in `AIInsightsPanel`
+2. **Frontend collects data** from canvas nodes:
+   - Story beats (title, summary, location, timeline order, characters)
+   - Characters (name, description)
+   - World rules (title, description)
+3. **POST request** sent to `${BACKEND_URL}/api/analyze` with story data
+4. **Backend processes** using Granite AI models
+5. **Insights returned** and stored in Supabase `ai_insights` table
+6. **UI updates** to display insights with visual indicators on affected nodes
+
+### API Endpoints
+
+**Analyze Story**
+```typescript
+POST /api/analyze
+Body: {
+  story_id: string
+  beats: Array<{ id, title, summary, location, timelineOrder, characterNames }>
+  characters: Array<{ id, name, description }>
+  world_rules: Array<{ id, title, description }>
+}
+Response: {
+  insights: AIInsight[]
+  summary: string
+}
+```
+
+**Resolve Insight**
+```typescript
+PATCH /api/insights/{insight_id}/resolve
+Response: void
+```
+
+### Database Schema
+
+**ai_insights table** (Supabase):
+```typescript
+interface AIInsight {
+  id: string                    // UUID
+  story_id: string              // Foreign key to stories
+  node_id: string | null        // Optional reference to specific node
+  insight_type: 'continuity' | 'world_rule' | 'character' | 'plot_hole' | 'pacing'
+  content: string               // AI-generated insight text
+  status: 'unresolved' | 'resolved'
+  created_at: string            // ISO timestamp
+}
+```
+
+### Custom Hooks
+
+**useAIInsights(storyId)**
+- Fetches all insights for a story from Supabase
+- Auto-refreshes every 10 seconds
+- Returns: `{ data: AIInsight[], isLoading: boolean }`
+
+**useRunAnalysis()**
+- Triggers AI analysis via backend
+- Collects canvas data and sends to API
+- Updates node warning flags on success
+- Returns: `{ mutate, isPending, data, error }`
+
+**useResolveInsight(storyId)**
+- Marks an insight as resolved
+- Updates cache and node warning flags
+- Returns: `{ mutate, isPending }`
+
+### UI Components
+
+**AIInsightsPanel**
+- Slide-in panel from right side of canvas
+- Displays categorized insights with color-coded badges
+- Shows unresolved count badge
+- Allows marking insights as resolved
+- Includes "Run AI Analysis" button
+
+**Insight Card**
+- Color-coded by type (continuity, world rule, character, plot hole, pacing)
+- Shows related story beat title
+- "Mark resolved" action button
+- Fades when resolved
+
+### Visual Indicators
+
+**Story Beat Nodes**
+- `hasAIWarning` flag in node data
+- Warning icon displayed when unresolved insights exist
+- Automatically updated after analysis or resolution
+
+### Error Handling
+
+- Network errors displayed in panel
+- Failed analysis shows error message
+- Graceful fallback if backend unavailable
+- Loading states for all async operations
+
+### Performance Considerations
+
+- Insights cached via TanStack Query (10s stale time)
+- Optimistic updates for resolve actions
+- Debounced auto-save prevents excessive API calls
+- Lazy loading of insight details
+
+### Development Setup
+
+1. **Backend must be running** on configured URL
+2. **Environment variable**: Set `VITE_BACKEND_URL` in `.env`
+3. **Supabase table**: Ensure `ai_insights` table exists
+4. **Test data**: Use sample stories with multiple beats
+
 ### Custom Cursor Rules
 
 The project includes `.cursorrules` with specific instructions:

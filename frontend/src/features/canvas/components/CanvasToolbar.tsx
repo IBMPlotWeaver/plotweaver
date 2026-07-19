@@ -1,7 +1,8 @@
-import { BookOpen, User, Shield, ZoomIn, ZoomOut, Maximize2, Trash2, Save, LayoutGrid } from 'lucide-react';
+import { BookOpen, User, Shield, ZoomIn, ZoomOut, Maximize2, Trash2, Save, LayoutGrid, Moon, Sun } from 'lucide-react';
 import { useReactFlow } from '@xyflow/react';
 import type { StoryNodeType } from '#/features/canvas/types/canvas.types';
 import { useCanvasStore } from '#/features/canvas/store/useCanvasStore';
+import { useThemeStore } from '#/features/store/useThemeStore';
 import { computeAutoLayout } from '#/features/canvas/utils/autoLayout';
 import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
@@ -43,6 +44,7 @@ export function CanvasToolbar({ storyTitle = 'Untitled Story' }: CanvasToolbarPr
   const selectedNodeId = useCanvasStore(state => state.selectedNodeId)
   const saveCanvas = useCanvasStore(state => state.saveCanvas)
   const setNodes = useCanvasStore(state => state.setNodes)
+  const { theme, toggleTheme } = useThemeStore();
   const [isSaving, setIsSaving] = useState(false);
 
   const handleAddNode = (type: StoryNodeType) => {
@@ -142,6 +144,18 @@ export function CanvasToolbar({ storyTitle = 'Untitled Story' }: CanvasToolbarPr
           <LayoutGrid className="w-4 h-4" />
         </button>
       </div>
+
+      {/* Divider */}
+      <div className="h-8 w-px bg-(--line)" />
+
+      {/* Theme toggle */}
+      <button
+        onClick={toggleTheme}
+        title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+        className="island-shell p-2 rounded-full text-(--sea-ink-soft) hover:bg-(--line) hover:text-(--sea-ink) transition-all cursor-pointer"
+      >
+        {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+      </button>
 
       {/* Divider */}
       <div className="h-8 w-px bg-(--line)" />
