@@ -54,11 +54,11 @@ export const CharacterNode = memo(({ id, data, selected }: NodeProps<Node<Charac
               autoFocus
               value={draft.name}
               onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
-              className="flex-1 text-sm font-semibold bg-transparent outline-none border-b border-fuchsia-400 text-(--sea-ink) min-w-0"
+              className="flex-1 text-base font-semibold bg-transparent outline-none border-b border-fuchsia-400 text-(--sea-ink) min-w-0"
               placeholder="Character Name"
             />
           ) : (
-            <span className="flex-1 text-sm font-semibold text-(--sea-ink) truncate">
+            <span className="flex-1 text-base font-semibold text-(--sea-ink) truncate">
               {data.name}
             </span>
           )}
@@ -73,12 +73,12 @@ export const CharacterNode = memo(({ id, data, selected }: NodeProps<Node<Charac
             <textarea
               value={draft.description}
               onChange={(e) => setDraft((d) => ({ ...d, description: e.target.value }))}
-              className="w-full flex-1 min-h-20 text-xs bg-transparent outline-none resize-none text-(--sea-ink-soft) border border-(--line) rounded-lg p-2 wrap-break-word"
+              className="w-full flex-1 min-h-20 text-sm bg-transparent outline-none resize-none text-(--sea-ink-soft) border border-(--line) rounded-lg p-2 wrap-break-word"
               placeholder="Describe this character's background, personality, and role..."
             />
           ) : (
             <div className="flex-1 overflow-y-auto min-h-0 pr-1 custom-scrollbar">
-              <p className="text-xs text-(--sea-ink-soft) leading-relaxed whitespace-pre-wrap wrap-break-word">
+              <p className="text-sm text-(--sea-ink-soft) leading-relaxed whitespace-pre-wrap wrap-break-word">
                 {data.description || 'No description yet...'}
               </p>
             </div>

@@ -109,7 +109,7 @@ function InsightCard({
 
       {/* Content */}
       <div className="px-3 pb-3">
-        <div className={`text-xs text-(--sea-ink) leading-relaxed ${expanded ? '' : 'line-clamp-3'}`}>
+        <div className={`text-sm text-(--sea-ink) leading-relaxed ${expanded ? '' : 'line-clamp-3'}`}>
           {insight.content}
         </div>
 
@@ -137,7 +137,7 @@ function InsightCard({
           <button
             onClick={() => onResolve(insight.id)}
             disabled={isResolving}
-            className="mt-3 w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border border-emerald-200 dark:border-emerald-800 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="mt-3 w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border border-emerald-200 dark:border-emerald-800 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isResolving ? (
               <>
@@ -186,7 +186,7 @@ function AIInsightsSidebarContent() {
         <button
           onClick={() => storyId && runAnalysis(storyId)}
           disabled={isAnalysing || !storyId}
-          className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold bg-linear-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 disabled:opacity-50 disabled:cursor-not-allowed text-white transition-all cursor-pointer shadow-lg shadow-violet-500/30 hover:shadow-violet-500/40"
+          className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-base font-semibold bg-linear-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 disabled:opacity-50 disabled:cursor-not-allowed text-white transition-all cursor-pointer shadow-lg shadow-violet-500/30 hover:shadow-violet-500/40"
         >
           {isAnalysing ? (
             <>
@@ -204,14 +204,14 @@ function AIInsightsSidebarContent() {
         {/* Last result summary */}
         {lastResult && !isAnalysing && (
           <div className="p-3 rounded-lg bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800">
-            <p className="text-xs text-violet-700 dark:text-violet-300 leading-relaxed">
+            <p className="text-sm text-violet-700 dark:text-violet-300 leading-relaxed">
               {lastResult.summary}
             </p>
           </div>
         )}
         {analysisError && !isAnalysing && (
           <div className="p-3 rounded-lg bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800">
-            <p className="text-xs text-rose-700 dark:text-rose-300 leading-relaxed">
+            <p className="text-sm text-rose-700 dark:text-rose-300 leading-relaxed">
               {analysisError.message}
             </p>
           </div>
@@ -246,7 +246,7 @@ function AIInsightsSidebarContent() {
           <div className="flex justify-center pt-12">
             <div className="flex flex-col items-center gap-3">
               <Loader2 className="w-6 h-6 text-violet-500 animate-spin" />
-              <p className="text-xs text-(--sea-ink-soft)">Loading insights...</p>
+              <p className="text-sm text-(--sea-ink-soft)">Loading insights...</p>
             </div>
           </div>
         )}
@@ -257,12 +257,12 @@ function AIInsightsSidebarContent() {
               <Lightbulb className="w-8 h-8 text-violet-500" />
             </div>
             <div className="space-y-2">
-              <p className="text-sm font-semibold text-(--sea-ink)">
+              <p className="text-base font-semibold text-(--sea-ink)">
                 {unresolvedInsights.length === 0 && resolvedInsights.length > 0
                   ? 'All issues resolved! 🎉'
                   : 'No issues found'}
               </p>
-              <p className="text-xs text-(--sea-ink-soft) leading-relaxed max-w-56">
+              <p className="text-sm text-(--sea-ink-soft) leading-relaxed max-w-56">
                 {unresolvedInsights.length === 0 && resolvedInsights.length > 0
                   ? 'Great work! Your story is looking solid.'
                   : 'Run the AI analysis to check your story for continuity issues, world-rule violations, and plot holes.'}
@@ -299,7 +299,7 @@ export function AIInsightsPanel() {
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetTrigger asChild>
           <button
-            className={`island-shell flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer shadow-lg ${unresolvedCount > 0
+            className={`island-shell flex items-center gap-2 px-3 py-2.5 rounded-xl text-base font-semibold transition-all cursor-pointer shadow-lg ${unresolvedCount > 0
               ? 'text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-900/20'
               : 'text-(--sea-ink-soft) hover:text-(--sea-ink)'
               }`}
@@ -315,7 +315,7 @@ export function AIInsightsPanel() {
         </SheetTrigger>
         <SheetContent side="right" className="w-80 p-0 border-(--line) bg-(--surface) flex flex-col">
           <SheetHeader className="px-4 pt-5 pb-3 border-b border-(--line)">
-            <SheetTitle className="flex items-center gap-2 text-base text-(--sea-ink)">
+            <SheetTitle className="flex items-center gap-2 text-lg text-(--sea-ink)">
               <BrainCircuit className="w-5 h-5 text-violet-500" />
               AI Review
               {unresolvedCount > 0 && (

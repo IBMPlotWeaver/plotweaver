@@ -14,19 +14,19 @@ export const StoryNodeComponent = memo(({ data, selected }: NodeProps<FlowNode>)
         <h3 className="font-semibold text-white text-sm">{data.label}</h3>
 
         {data.timeline_order !== null && data.timeline_order !== undefined && (
-          <div className="text-xs text-sea-ink-soft">
+          <div className="text-sm text-sea-ink-soft">
             Timeline: {data.timeline_order}
           </div>
         )}
 
         {data.location && (
-          <div className="text-xs text-sea-ink-soft">
+          <div className="text-sm text-sea-ink-soft">
             📍 {data.location}
           </div>
         )}
 
         {data.summary && (
-          <p className="text-xs text-sea-ink-soft line-clamp-3">{data.summary}</p>
+          <p className="text-sm text-sea-ink-soft line-clamp-3">{data.summary}</p>
         )}
       </div>
 

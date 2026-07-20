@@ -1,4 +1,4 @@
-import { ZoomIn, ZoomOut, Maximize2, Trash2, Save, LayoutGrid, Moon, Sun } from 'lucide-react';
+import { Maximize2, Trash2, Save, LayoutGrid, Moon, Sun } from 'lucide-react';
 import { useReactFlow } from '@xyflow/react';
 import { useCanvasStore } from '#/features/canvas/store/useCanvasStore';
 import { useThemeStore } from '#/features/store/useThemeStore';
@@ -16,7 +16,7 @@ interface CanvasToolbarProps {
  * Provides node creation, zoom, fit-view, and save controls.
  */
 export function CanvasToolbar({ storyTitle = 'Untitled Story' }: CanvasToolbarProps) {
-  const { zoomIn, zoomOut, fitView } = useReactFlow();
+  const { fitView } = useReactFlow();
   const deleteNode = useCanvasStore(state => state.deleteNode)
   const selectedNodeId = useCanvasStore(state => state.selectedNodeId)
   const saveCanvas = useCanvasStore(state => state.saveCanvas)
@@ -47,7 +47,7 @@ export function CanvasToolbar({ storyTitle = 'Untitled Story' }: CanvasToolbarPr
       {/* Back to Dashboard */}
       <Link
         to="/dashboard"
-        className="island-shell flex items-center gap-2 px-3 py-2 rounded-full text-sm font-medium text-(--sea-ink-soft) hover:text-(--sea-ink) hover:bg-(--line) transition-colors cursor-pointer"
+        className="island-shell flex items-center gap-2 px-3 py-2 rounded-full text-base font-medium text-(--sea-ink-soft) hover:text-(--sea-ink) hover:bg-(--line) transition-colors cursor-pointer"
         title="Back to Dashboard"
       >
         <ArrowLeft className="w-4 h-4" />
@@ -56,7 +56,7 @@ export function CanvasToolbar({ storyTitle = 'Untitled Story' }: CanvasToolbarPr
 
       {/* Story title chip */}
       <div className="island-shell px-4 py-2 rounded-full flex items-center">
-        <span className="text-sm font-semibold text-(--sea-ink) truncate max-w-40 block">
+        <span className="text-base font-semibold text-(--sea-ink) truncate max-w-40 block">
           {storyTitle}
         </span>
         {useCanvasStore((state) => state.hasUnsavedChanges) && (
@@ -69,20 +69,6 @@ export function CanvasToolbar({ storyTitle = 'Untitled Story' }: CanvasToolbarPr
 
       {/* Viewport controls */}
       <div className="island-shell flex items-center gap-1 p-1 rounded-full">
-        <button
-          onClick={() => zoomIn()}
-          title="Zoom in"
-          className="p-2 rounded-full text-(--sea-ink-soft) hover:bg-(--line) transition-colors cursor-pointer"
-        >
-          <ZoomIn className="w-4 h-4" />
-        </button>
-        <button
-          onClick={() => zoomOut()}
-          title="Zoom out"
-          className="p-2 rounded-full text-(--sea-ink-soft) hover:bg-(--line) transition-colors cursor-pointer"
-        >
-          <ZoomOut className="w-4 h-4" />
-        </button>
         <button
           onClick={() => fitView({ padding: 0.2 })}
           title="Fit view"
@@ -118,7 +104,7 @@ export function CanvasToolbar({ storyTitle = 'Untitled Story' }: CanvasToolbarPr
       <button
         onClick={handleSave}
         disabled={isSaving}
-        className="island-shell flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium text-(--sea-ink) hover:bg-(--line) transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+        className="island-shell flex items-center gap-1.5 px-3 py-2 rounded-full text-base font-medium text-(--sea-ink) hover:bg-(--line) transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         title="Save canvas"
       >
         <Save className={`w-4 h-4 ${isSaving ? 'animate-pulse' : ''}`} />
@@ -132,7 +118,7 @@ export function CanvasToolbar({ storyTitle = 'Untitled Story' }: CanvasToolbarPr
           <button
             onClick={() => deleteNode(selectedNodeId)}
             title="Delete selected node"
-            className="island-shell flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+            className="island-shell flex items-center gap-1.5 px-3 py-2 rounded-full text-base font-medium text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
           >
             <Trash2 className="w-4 h-4" />
             <span className="hidden sm:inline">Delete</span>

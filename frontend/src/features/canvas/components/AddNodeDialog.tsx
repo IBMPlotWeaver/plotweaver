@@ -124,7 +124,7 @@ export function AddNodeDialog({ isOpen, onClose, nodeType }: AddNodeDialogProps)
 
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div>
-            <label htmlFor="title" className="block text-sm font-medium text-(--sea-ink) mb-1.5">
+            <label htmlFor="title" className="block text-base font-medium text-(--sea-ink) mb-1.5">
               {config.titleLabel} *
             </label>
             <Input
@@ -138,7 +138,7 @@ export function AddNodeDialog({ isOpen, onClose, nodeType }: AddNodeDialogProps)
           </div>
 
           <div>
-            <label htmlFor="description" className="block text-sm font-medium text-(--sea-ink) mb-1.5">
+            <label htmlFor="description" className="block text-base font-medium text-(--sea-ink) mb-1.5">
               {config.descLabel}
             </label>
             <textarea
@@ -146,7 +146,7 @@ export function AddNodeDialog({ isOpen, onClose, nodeType }: AddNodeDialogProps)
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder={config.descPlaceholder}
-              className="w-full px-3 py-2 text-sm rounded-lg border border-(--line) bg-transparent text-(--sea-ink) placeholder:text-(--sea-ink-soft) focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent resize-none"
+              className="w-full px-3 py-2 text-base rounded-lg border border-(--line) bg-transparent text-(--sea-ink) placeholder:text-(--sea-ink-soft) focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent resize-none"
               rows={4}
             />
           </div>
@@ -154,7 +154,7 @@ export function AddNodeDialog({ isOpen, onClose, nodeType }: AddNodeDialogProps)
           {nodeType === 'storyBeat' && (
             <>
               <div>
-                <label htmlFor="location" className="block text-sm font-medium text-(--sea-ink) mb-1.5">
+                <label htmlFor="location" className="block text-base font-medium text-(--sea-ink) mb-1.5">
                   Location (optional)
                 </label>
                 <Input
@@ -168,7 +168,7 @@ export function AddNodeDialog({ isOpen, onClose, nodeType }: AddNodeDialogProps)
 
               {characterNodes.length > 0 && (
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-(--sea-ink)">
+                  <label className="block text-base font-medium text-(--sea-ink)">
                     Characters in this beat (optional)
                   </label>
                   <div className="flex flex-wrap gap-2">
@@ -184,7 +184,7 @@ export function AddNodeDialog({ isOpen, onClose, nodeType }: AddNodeDialogProps)
                               isSelected ? prev.filter((id) => id !== char.id) : [...prev, char.id]
                             );
                           }}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${isSelected
+                          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${isSelected
                             ? 'bg-fuchsia-100 dark:bg-fuchsia-900/40 text-fuchsia-700 dark:text-fuchsia-300 border-2 border-fuchsia-500'
                             : 'bg-(--line) text-(--sea-ink-soft) border-2 border-transparent hover:border-(--sea-ink-soft)'
                             }`}

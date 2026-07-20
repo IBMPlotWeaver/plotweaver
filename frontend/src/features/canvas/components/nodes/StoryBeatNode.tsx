@@ -86,11 +86,11 @@ export const StoryBeatNode = memo(({ id, data, selected }: NodeProps<Node<StoryB
               autoFocus
               value={draft.title}
               onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))}
-              className="flex-1 text-sm font-semibold bg-transparent outline-none border-b border-violet-400 text-(--sea-ink) min-w-0"
+              className="flex-1 text-base font-semibold bg-transparent outline-none border-b border-violet-400 text-(--sea-ink) min-w-0"
               placeholder="Beat Title"
             />
           ) : (
-            <span className="flex-1 text-sm font-semibold text-(--sea-ink) truncate">
+            <span className="flex-1 text-base font-semibold text-(--sea-ink) truncate">
               {data.title}
             </span>
           )}
@@ -114,12 +114,12 @@ export const StoryBeatNode = memo(({ id, data, selected }: NodeProps<Node<StoryB
             <textarea
               value={draft.summary}
               onChange={(e) => setDraft((d) => ({ ...d, summary: e.target.value }))}
-              className="w-full flex-1 min-h-15 text-xs bg-transparent outline-none resize-none text-(--sea-ink-soft) border border-(--line) rounded-lg p-2 wrap-break-word"
+              className="w-full flex-1 min-h-15 text-sm bg-transparent outline-none resize-none text-(--sea-ink-soft) border border-(--line) rounded-lg p-2 wrap-break-word"
               placeholder="Describe the beat. Type @CharacterName to tag characters..."
             />
           ) : (
             <div className="flex-1 overflow-y-auto min-h-0 pr-1 custom-scrollbar">
-              <p className="text-xs text-(--sea-ink-soft) leading-relaxed whitespace-pre-wrap wrap-break-word">
+              <p className="text-sm text-(--sea-ink-soft) leading-relaxed whitespace-pre-wrap wrap-break-word">
                 {data.summary || 'No summary yet...'}
               </p>
             </div>
@@ -132,11 +132,11 @@ export const StoryBeatNode = memo(({ id, data, selected }: NodeProps<Node<StoryB
               <input
                 value={draft.location}
                 onChange={(e) => setDraft((d) => ({ ...d, location: e.target.value }))}
-                className="flex-1 text-xs bg-transparent outline-none border-b border-(--line) text-(--sea-ink-soft) min-w-0"
+                className="flex-1 text-sm bg-transparent outline-none border-b border-(--line) text-(--sea-ink-soft) min-w-0"
                 placeholder="Location"
               />
             ) : (
-              <span className="text-xs text-(--sea-ink-soft) truncate">
+              <span className="text-sm text-(--sea-ink-soft) truncate">
                 {data.location || 'No location set'}
               </span>
             )}

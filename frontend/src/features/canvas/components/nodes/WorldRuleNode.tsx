@@ -56,11 +56,11 @@ export const WorldRuleNode = memo(({ id, data, selected }: NodeProps<Node<WorldR
               autoFocus
               value={draft.title}
               onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))}
-              className="flex-1 text-sm font-semibold bg-transparent outline-none border-b border-violet-400 text-(--sea-ink) min-w-0"
+              className="flex-1 text-base font-semibold bg-transparent outline-none border-b border-violet-400 text-(--sea-ink) min-w-0"
               placeholder="Rule Title"
             />
           ) : (
-            <span className="flex-1 text-sm font-semibold text-(--sea-ink) truncate">
+            <span className="flex-1 text-base font-semibold text-(--sea-ink) truncate">
               {data.title}
             </span>
           )}
@@ -75,12 +75,12 @@ export const WorldRuleNode = memo(({ id, data, selected }: NodeProps<Node<WorldR
             <textarea
               value={draft.description}
               onChange={(e) => setDraft((d) => ({ ...d, description: e.target.value }))}
-              className="w-full flex-1 min-h-20 text-xs bg-transparent outline-none resize-none text-(--sea-ink-soft) border border-violet-300 dark:border-violet-700 rounded-lg p-2 wrap-break-word"
+              className="w-full flex-1 min-h-20 text-sm bg-transparent outline-none resize-none text-(--sea-ink-soft) border border-violet-300 dark:border-violet-700 rounded-lg p-2 wrap-break-word"
               placeholder="Describe the constraint or rule that governs this world..."
             />
           ) : (
             <div className="flex-1 overflow-y-auto min-h-0 pr-1 custom-scrollbar">
-              <p className="text-xs text-(--sea-ink-soft) leading-relaxed whitespace-pre-wrap wrap-break-word">
+              <p className="text-sm text-(--sea-ink-soft) leading-relaxed whitespace-pre-wrap wrap-break-word">
                 {data.description}
               </p>
             </div>

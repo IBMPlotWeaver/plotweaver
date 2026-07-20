@@ -19,6 +19,7 @@ import { WorldRuleNode } from '#/features/canvas/components/nodes/WorldRuleNode'
 import { useUnsavedChangesWarning } from '#/features/canvas/hooks/useUnsavedChangesWarning';
 import { computeAutoLayout } from '#/features/canvas/utils/autoLayout';
 import { AIInsightsPanel } from '#/features/canvas/components/AIInsightsPanel';
+import { ZoomControls } from '#/features/canvas/components/ZoomControls';
 import { useReactFlow } from '@xyflow/react';
 import { useState } from 'react';
 import { useStory } from '#/features/canvas/hooks/useStory';
@@ -140,6 +141,9 @@ export function StoryCanvas() {
 
         {/* AI Insights panel — slides in from the right */}
         <AIInsightsPanel />
+
+        {/* Zoom controls at the bottom */}
+        <ZoomControls />
 
         <Background
           variant={BackgroundVariant.Dots}
