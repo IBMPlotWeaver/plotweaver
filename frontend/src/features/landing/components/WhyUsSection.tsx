@@ -1,4 +1,5 @@
 import { ShieldCheck, Workflow } from 'lucide-react';
+import { DemoCanvas } from './DemoCanvas';
 
 export function WhyUsSection() {
   return (
@@ -46,11 +47,8 @@ export function WhyUsSection() {
               <div className="w-3 h-3 rounded-full bg-amber-500/80"></div>
               <div className="w-3 h-3 rounded-full bg-emerald-500/80"></div>
             </div>
-            <div className="flex-1 flex items-center justify-center p-8 text-center">
-              <div className="text-slate-400 dark:text-slate-500 font-medium">
-                <Workflow className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                Interactive React Flow Canvas Demo
-              </div>
+            <div className="flex-1 relative">
+              <DemoCanvas />
             </div>
           </div>
         </div>
