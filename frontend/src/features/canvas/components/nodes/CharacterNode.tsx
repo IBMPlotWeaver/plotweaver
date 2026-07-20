@@ -38,7 +38,7 @@ export const CharacterNode = memo(({ id, data, selected }: NodeProps<Node<Charac
     <>
       <NodeResizer minWidth={256} minHeight={200} isVisible={selected} lineClassName="border-fuchsia-500" handleClassName="h-3 w-3 bg-white border-2 border-fuchsia-500 rounded-sm" />
       <div
-        className={`relative w-full h-full min-w-64 min-h-50 flex flex-col rounded-2xl border transition-all duration-200 ${selected
+        className={`relative w-full h-full min-w-64 max-w-96 min-h-50 flex flex-col rounded-2xl border transition-all duration-200 ${selected
           ? 'border-fuchsia-500 shadow-lg shadow-fuchsia-500/30'
           : 'border-(--line) shadow-md'
           }`}

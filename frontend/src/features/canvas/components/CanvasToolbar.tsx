@@ -1,6 +1,5 @@
-import { BookOpen, User, Shield, ZoomIn, ZoomOut, Maximize2, Trash2, Save, LayoutGrid, Moon, Sun } from 'lucide-react';
+import { ZoomIn, ZoomOut, Maximize2, Trash2, Save, LayoutGrid, Moon, Sun } from 'lucide-react';
 import { useReactFlow } from '@xyflow/react';
-import type { StoryNodeType } from '#/features/canvas/types/canvas.types';
 import { useCanvasStore } from '#/features/canvas/store/useCanvasStore';
 import { useThemeStore } from '#/features/store/useThemeStore';
 import { computeAutoLayout } from '#/features/canvas/utils/autoLayout';
@@ -12,45 +11,18 @@ interface CanvasToolbarProps {
   storyTitle?: string;
 }
 
-const NODE_BUTTONS: { type: StoryNodeType; label: string; icon: React.ReactNode; color: string }[] = [
-  {
-    type: 'storyBeat',
-    label: 'Story Beat',
-    icon: <BookOpen className="w-4 h-4" />,
-    color: 'bg-violet-600 hover:bg-violet-700 text-white shadow-violet-500/25'
-  },
-  {
-    type: 'character',
-    label: 'Character',
-    icon: <User className="w-4 h-4" />,
-    color: 'bg-fuchsia-600 hover:bg-fuchsia-700 text-white shadow-fuchsia-500/25'
-  },
-  {
-    type: 'worldRule',
-    label: 'World Rule',
-    icon: <Shield className="w-4 h-4" />,
-    color: 'bg-violet-500 hover:bg-violet-600 text-white shadow-violet-500/25'
-  },
-];
-
 /**
  * Floating toolbar for the story canvas.
  * Provides node creation, zoom, fit-view, and save controls.
  */
 export function CanvasToolbar({ storyTitle = 'Untitled Story' }: CanvasToolbarProps) {
   const { zoomIn, zoomOut, fitView } = useReactFlow();
-  const addNode = useCanvasStore(state => state.addNode)
   const deleteNode = useCanvasStore(state => state.deleteNode)
   const selectedNodeId = useCanvasStore(state => state.selectedNodeId)
   const saveCanvas = useCanvasStore(state => state.saveCanvas)
   const setNodes = useCanvasStore(state => state.setNodes)
   const { theme, toggleTheme } = useThemeStore();
   const [isSaving, setIsSaving] = useState(false);
-
-  const handleAddNode = (type: StoryNodeType) => {
-    // Place the new node near the visible center
-    addNode(type, { x: 250 + Math.random() * 300, y: 100 + Math.random() * 200 });
-  };
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -90,24 +62,6 @@ export function CanvasToolbar({ storyTitle = 'Untitled Story' }: CanvasToolbarPr
         {useCanvasStore((state) => state.hasUnsavedChanges) && (
           <div className="w-2 h-2 ml-2 rounded-full bg-fuchsia-500 animate-pulse" title="Unsaved changes" />
         )}
-      </div>
-
-      {/* Divider */}
-      <div className="h-8 w-px bg-(--line)" />
-
-      {/* Add node buttons */}
-      <div className="island-shell flex items-center gap-1 p-1 rounded-full">
-        {NODE_BUTTONS.map(({ type, label, icon, color }) => (
-          <button
-            key={type}
-            onClick={() => handleAddNode(type)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium shadow-md transition-all duration-150 cursor-pointer ${color}`}
-            title={`Add ${label}`}
-          >
-            {icon}
-            <span className="hidden sm:inline">{label}</span>
-          </button>
-        ))}
       </div>
 
       {/* Divider */}

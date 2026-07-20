@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useReactFlow, Panel } from '@xyflow/react';
-import { BookOpen, User, Shield, ChevronRight, PanelLeftOpen, PanelLeftClose, Hash, MapPin, Code, Copy, Check, Layers } from 'lucide-react';
+import { BookOpen, User, Shield, ChevronRight, PanelLeftOpen, PanelLeftClose, Hash, MapPin, Code, Copy, Check, Layers, Plus } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
@@ -15,7 +15,8 @@ import {
   DialogTitle,
 } from '#/features/shadcn/components/ui/dialog';
 import { useCanvasStore } from '#/features/canvas/store/useCanvasStore';
-import type { StoryBeatNodeData, CharacterNodeData, WorldRuleNodeData } from '#/features/canvas/types/canvas.types';
+import type { StoryBeatNodeData, CharacterNodeData, WorldRuleNodeData, StoryNodeType } from '#/features/canvas/types/canvas.types';
+import { AddNodeDialog } from './AddNodeDialog';
 
 /**
  * Modal that displays the current canvas nodes and edges as formatted JSON.
@@ -87,6 +88,8 @@ interface NodeSection<T> {
 function NodesSidebarContent({ onItemClick }: { onItemClick: (id: string) => void }) {
   const { nodes, selectedNodeId } = useCanvasStore();
   const [jsonOpen, setJsonOpen] = useState(false);
+  const [addNodeOpen, setAddNodeOpen] = useState(false);
+  const [addNodeType, setAddNodeType] = useState<StoryNodeType>('storyBeat');
 
   const storyBeats = nodes.filter((n) => n.type === 'storyBeat');
   const characters = nodes.filter((n) => n.type === 'character');
@@ -132,23 +135,35 @@ function NodesSidebarContent({ onItemClick }: { onItemClick: (id: string) => voi
   return (
     <>
       <JsonModal open={jsonOpen} onClose={() => setJsonOpen(false)} />
+      <AddNodeDialog
+        isOpen={addNodeOpen}
+        onClose={() => setAddNodeOpen(false)}
+        nodeType={addNodeType}
+      />
 
       <div className="flex flex-col h-full overflow-hidden">
         <div className="flex-1 overflow-y-auto px-4 py-3 space-y-5 custom-scrollbar">
-          {totalCount === 0 ? (
-            <div className="flex flex-col items-center justify-center h-40 gap-3 text-center px-4">
+          {totalCount === 0 && (
+            <div className="flex flex-col items-center justify-center h-32 gap-3 text-center px-4 mb-4">
               <div className="w-14 h-14 rounded-2xl bg-linear-to-br from-violet-100 to-fuchsia-100 dark:from-violet-900/40 dark:to-fuchsia-900/40 flex items-center justify-center">
                 <Layers className="w-7 h-7 text-violet-500" />
               </div>
               <div className="space-y-1">
                 <p className="text-sm font-semibold text-(--sea-ink)">No nodes yet</p>
                 <p className="text-xs text-(--sea-ink-soft) opacity-70 leading-relaxed">
-                  Add nodes from the toolbar above to start building your story.
+                  Click the + buttons below to add nodes.
                 </p>
               </div>
             </div>
-          ) : (
-            sections.map((section) => (
+          )}
+          {sections.map((section) => {
+              const typeMap: Record<string, StoryNodeType> = {
+                'Story Beats': 'storyBeat',
+                'Characters': 'character',
+                'World Rules': 'worldRule',
+              };
+              
+              return (
               <div key={section.label}>
                 {/* Section header */}
                 <div className="flex items-center gap-2 mb-3 px-1">
@@ -159,6 +174,22 @@ function NodesSidebarContent({ onItemClick }: { onItemClick: (id: string) => voi
                   <span className={`ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full ${section.badgeClass}`}>
                     {section.nodes.length}
                   </span>
+                  <button
+                    onClick={() => {
+                      setAddNodeType(typeMap[section.label]);
+                      setAddNodeOpen(true);
+                    }}
+                    className={`p-1 rounded-md transition-colors cursor-pointer ${
+                      section.label === 'Story Beats'
+                        ? 'hover:bg-violet-100 dark:hover:bg-violet-900/40'
+                        : section.label === 'Characters'
+                        ? 'hover:bg-fuchsia-100 dark:hover:bg-fuchsia-900/40'
+                        : 'hover:bg-indigo-100 dark:hover:bg-indigo-900/40'
+                    }`}
+                    title={`Add ${section.label.slice(0, -1)}`}
+                  >
+                    <Plus className={`w-3.5 h-3.5 ${section.accentClass}`} />
+                  </button>
                 </div>
 
                 {section.nodes.length === 0 ? (
@@ -213,8 +244,8 @@ function NodesSidebarContent({ onItemClick }: { onItemClick: (id: string) => voi
                   </ul>
                 )}
               </div>
-            ))
-          )}
+              );
+            })}
         </div>
 
         {/* Export JSON footer */}

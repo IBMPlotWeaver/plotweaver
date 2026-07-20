@@ -4,6 +4,7 @@ import { Input } from '#/features/shadcn/components/ui/input';
 import { Sparkles, X, Loader2 } from 'lucide-react';
 import { useCreateStory } from '../hooks/useStoryMutations';
 import { useCurrentUser } from '#/lib/useCurrentUser';
+import { QuickCreateModal } from './QuickCreateModal';
 
 interface CreateStoryDialogProps {
   isOpen: boolean;
@@ -15,6 +16,8 @@ export function CreateStoryDialog({ isOpen, onClose }: CreateStoryDialogProps) {
   const createStory = useCreateStory();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [showQuickCreate, setShowQuickCreate] = useState(false);
+  const [createdStoryId, setCreatedStoryId] = useState<string | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,18 +30,30 @@ export function CreateStoryDialog({ isOpen, onClose }: CreateStoryDialogProps) {
         userId: user.id,
       },
       {
-        onSuccess: () => {
+        onSuccess: (story) => {
           setTitle('');
           setDescription('');
+          setCreatedStoryId(story.id);
+          setShowQuickCreate(true);
           onClose();
         },
       }
     );
   };
 
-  if (!isOpen) return null;
+  const handleQuickCreateClose = () => {
+    setShowQuickCreate(false);
+    setCreatedStoryId(null);
+  };
 
   return (
+    <>
+      <QuickCreateModal
+        isOpen={showQuickCreate}
+        onClose={handleQuickCreateClose}
+        storyId={createdStoryId || ''}
+      />
+      {isOpen && (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="island-shell rounded-2xl p-6 w-full max-w-md shadow-2xl animate-in zoom-in-95 duration-200">
         {/* Header */}
@@ -131,5 +146,7 @@ export function CreateStoryDialog({ isOpen, onClose }: CreateStoryDialogProps) {
         </form>
       </div>
     </div>
+      )}
+    </>
   );
 }

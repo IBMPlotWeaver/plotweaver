@@ -37,7 +37,7 @@ export const WorldRuleNode = memo(({ id, data, selected }: NodeProps<Node<WorldR
     <>
       <NodeResizer minWidth={288} minHeight={200} isVisible={selected} lineClassName="border-violet-500" handleClassName="h-3 w-3 bg-white border-2 border-violet-500 rounded-sm" />
       <div
-        className={`relative w-full h-full min-w-72 min-h-50 flex flex-col rounded-2xl border-2 transition-all duration-200 ${selected
+        className={`relative w-full h-full min-w-72 max-w-96 min-h-50 flex flex-col rounded-2xl border-2 transition-all duration-200 ${selected
           ? 'border-violet-500 shadow-lg shadow-violet-500/30'
           : 'border-violet-400 dark:border-violet-600 shadow-md'
           }`}

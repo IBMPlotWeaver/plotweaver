@@ -36,7 +36,7 @@ export const StoryBeatNode = memo(({ id, data, selected }: NodeProps<Node<StoryB
   const hasAIWarning = data.hasAIWarning || false;
   const timelineOrder = data.timelineOrder ?? 0;
 
-  // Dynamically extract mentioned characters from text
+  // Dynamically extract mentioned characters from text with smart partial matching
   const { nodes } = useCanvasStore();
   const textToScan = (editing ? `${draft.title} ${draft.summary}` : `${data.title} ${data.summary}`).toLowerCase();
 
@@ -44,7 +44,19 @@ export const StoryBeatNode = memo(({ id, data, selected }: NodeProps<Node<StoryB
     nodes
       .filter(n => n.type === 'character')
       .map(char => char.data as import('#/features/canvas/types/canvas.types').CharacterNodeData)
-      .filter(charData => charData.name && textToScan.includes(`@${charData.name.toLowerCase()}`))
+      .filter(charData => {
+        if (!charData.name) return false;
+        const fullName = charData.name.toLowerCase();
+        
+        // Check for exact full name match
+        if (textToScan.includes(`@${fullName}`)) return true;
+        
+        // Check for partial matches (any word in the full name)
+        const nameParts = fullName.split(/\s+/);
+        return nameParts.some(part => 
+          part.length > 2 && textToScan.includes(`@${part}`)
+        );
+      })
       .map(charData => charData.name)
   ));
 
@@ -52,7 +64,7 @@ export const StoryBeatNode = memo(({ id, data, selected }: NodeProps<Node<StoryB
     <>
       <NodeResizer minWidth={320} minHeight={220} isVisible={selected} lineClassName="border-violet-500" handleClassName="h-3 w-3 bg-white border-2 border-violet-500 rounded-sm" />
       <div
-        className={`relative w-full h-full min-w-80 min-h-55 flex flex-col rounded-2xl border transition-all duration-200 ${selected
+        className={`relative w-full h-full min-w-80 max-w-120 min-h-55 flex flex-col rounded-2xl border transition-all duration-200 ${selected
           ? 'border-violet-500 shadow-lg shadow-violet-500/30'
           : 'border-(--line) shadow-md'
           }`}
