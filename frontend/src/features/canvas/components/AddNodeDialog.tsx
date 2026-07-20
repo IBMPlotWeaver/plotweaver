@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from '#/features/shadcn/components/ui/button';
 import { Input } from '#/features/shadcn/components/ui/input';
-import { BookOpen, User, Shield, X, Plus } from 'lucide-react';
+import { BookOpen, User, Shield, Plus } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -39,7 +39,7 @@ const nodeConfig = {
   worldRule: {
     label: 'World Rule',
     icon: Shield,
-    color: 'indigo',
+    color: 'violet',
     titlePlaceholder: 'World rule title...',
     descPlaceholder: 'Rule description...',
     titleLabel: 'Title',
@@ -67,10 +67,10 @@ export function AddNodeDialog({ isOpen, onClose, nodeType }: AddNodeDialogProps)
     // Get the newly added node and update its data
     const nodes = useCanvasStore.getState().nodes;
     const newNode = nodes[nodes.length - 1];
-    
+
     if (newNode) {
       const updateData: any = {};
-      
+
       if (nodeType === 'storyBeat') {
         updateData.title = title.trim();
         updateData.summary = description.trim();
@@ -88,7 +88,7 @@ export function AddNodeDialog({ isOpen, onClose, nodeType }: AddNodeDialogProps)
         updateData.title = title.trim();
         updateData.description = description.trim();
       }
-      
+
       useCanvasStore.getState().updateNodeData(newNode.id, updateData);
     }
 
@@ -184,11 +184,10 @@ export function AddNodeDialog({ isOpen, onClose, nodeType }: AddNodeDialogProps)
                               isSelected ? prev.filter((id) => id !== char.id) : [...prev, char.id]
                             );
                           }}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                            isSelected
-                              ? 'bg-fuchsia-100 dark:bg-fuchsia-900/40 text-fuchsia-700 dark:text-fuchsia-300 border-2 border-fuchsia-500'
-                              : 'bg-(--line) text-(--sea-ink-soft) border-2 border-transparent hover:border-(--sea-ink-soft)'
-                          }`}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${isSelected
+                            ? 'bg-fuchsia-100 dark:bg-fuchsia-900/40 text-fuchsia-700 dark:text-fuchsia-300 border-2 border-fuchsia-500'
+                            : 'bg-(--line) text-(--sea-ink-soft) border-2 border-transparent hover:border-(--sea-ink-soft)'
+                            }`}
                         >
                           {charData.name}
                         </button>
@@ -211,7 +210,7 @@ export function AddNodeDialog({ isOpen, onClose, nodeType }: AddNodeDialogProps)
             </Button>
             <Button
               type="submit"
-              className={`flex-1 rounded-xl bg-linear-to-r from-${config.color}-600 to-${config.color === 'violet' ? 'fuchsia' : config.color}-500 hover:from-${config.color}-700 hover:to-${config.color === 'violet' ? 'fuchsia' : config.color}-600 text-white border-none shadow-lg`}
+              className={`flex-1 rounded-xl bg-linear-to-r from-${config.color}-600 to-${config.color === 'violet' ? 'violet' : config.color}-500 hover:from-${config.color}-700 hover:to-${config.color === 'violet' ? 'violet' : config.color}-600 text-white border-none shadow-lg`}
               disabled={!title.trim()}
             >
               <Plus className="w-4 h-4" />
