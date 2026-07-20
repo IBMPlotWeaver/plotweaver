@@ -14,6 +14,8 @@ import {
   BrainCircuit,
   ChevronDown,
   ChevronUp,
+  Wand2,
+  X,
 } from 'lucide-react'
 import {
   Sheet,
@@ -23,8 +25,8 @@ import {
   SheetTrigger,
 } from '#/features/shadcn/components/ui/sheet'
 import { useCanvasStore } from '#/features/canvas/store/useCanvasStore'
-import { useAIInsights, useRunAnalysis, useResolveInsight } from '#/features/canvas/hooks/useAIAnalysis'
-import type { AIInsight } from '#/features/canvas/hooks/useAIAnalysis'
+import { useAIInsights, useRunAnalysis, useResolveInsight, useBrainstorm } from '#/features/canvas/hooks/useAIAnalysis'
+import type { AIInsight, BrainstormSuggestion } from '#/features/canvas/hooks/useAIAnalysis'
 
 // ── Insight type metadata ────────────────────────────────────────────────────
 
@@ -49,9 +51,9 @@ const TYPE_META: Record<
   character: {
     label: 'Character',
     icon: <User className="w-3.5 h-3.5" />,
-    color: 'text-fuchsia-600 dark:text-fuchsia-400',
-    bg: 'bg-fuchsia-50 dark:bg-fuchsia-900/20',
-    borderColor: 'border-fuchsia-200 dark:border-fuchsia-800',
+    color: 'text-sky-600 dark:text-sky-400',
+    bg: 'bg-sky-50 dark:bg-sky-900/20',
+    borderColor: 'border-sky-200 dark:border-sky-800',
   },
   plot_hole: {
     label: 'Plot Hole',
@@ -63,13 +65,13 @@ const TYPE_META: Record<
   pacing: {
     label: 'Pacing',
     icon: <Activity className="w-3.5 h-3.5" />,
-    color: 'text-sky-600 dark:text-sky-400',
-    bg: 'bg-sky-50 dark:bg-sky-900/20',
-    borderColor: 'border-sky-200 dark:border-sky-800',
+    color: 'text-teal-600 dark:text-teal-400',
+    bg: 'bg-teal-50 dark:bg-teal-900/20',
+    borderColor: 'border-teal-200 dark:border-teal-800',
   },
 }
 
-// ── Single insight card ───────────────────────────────────────────────────────
+// ── Insight card ─────────────────────────────────────────────────────────────
 
 function InsightCard({
   insight,
@@ -85,6 +87,24 @@ function InsightCard({
   const [expanded, setExpanded] = useState(false)
   const meta = TYPE_META[insight.insight_type] ?? TYPE_META.continuity
   const resolved = insight.status === 'resolved'
+
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [suggestions, setSuggestions] = useState<BrainstormSuggestion[]>([])
+  const { mutate: brainstorm, isPending: isBrainstorming, error: brainstormError } = useBrainstorm()
+
+  const handleBrainstorm = () => {
+    // If we already have suggestions cached, just toggle visibility — no new request
+    if (suggestions.length > 0) {
+      setShowSuggestions((v) => !v)
+      return
+    }
+    brainstorm(insight.content, {
+      onSuccess: (data) => {
+        setSuggestions(data.suggestions)
+        setShowSuggestions(true)
+      },
+    })
+  }
 
   return (
     <div
@@ -113,6 +133,7 @@ function InsightCard({
           {insight.content}
         </div>
 
+        {/* Expand / collapse long content */}
         {insight.content.length > 150 && (
           <button
             onClick={() => setExpanded(!expanded)}
@@ -132,25 +153,53 @@ function InsightCard({
           </button>
         )}
 
-        {/* Action */}
+        {/* Brainstorm suggestions */}
+        {showSuggestions && suggestions.length > 0 && (
+          <div className="flex flex-col gap-1.5 mt-2 border-t border-(--line) pt-2">
+            <p className="text-[10px] font-semibold text-violet-500 uppercase tracking-wide">AI Suggestions</p>
+            {suggestions.map((s, i) => (
+              <div key={i} className="rounded-lg bg-violet-50 dark:bg-violet-900/20 p-2">
+                <p className="text-[11px] font-semibold text-violet-700 dark:text-violet-300">{s.title}</p>
+                <p className="text-[11px] text-(--sea-ink-soft) leading-relaxed mt-0.5">{s.description}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {brainstormError && (
+          <p className="text-[11px] text-rose-500 mt-1">{brainstormError.message}</p>
+        )}
+
+        {/* Actions */}
         {!resolved && (
-          <button
-            onClick={() => onResolve(insight.id)}
-            disabled={isResolving}
-            className="mt-3 w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border border-emerald-200 dark:border-emerald-800 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isResolving ? (
-              <>
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                Resolving...
-              </>
-            ) : (
-              <>
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                Mark as Resolved
-              </>
-            )}
-          </button>
+          <div className="flex items-center gap-1 mt-3 self-end">
+            <button
+              onClick={handleBrainstorm}
+              disabled={isBrainstorming}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/30 transition-colors cursor-pointer disabled:opacity-50"
+            >
+              {isBrainstorming ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : showSuggestions && suggestions.length > 0 ? (
+                <ChevronUp className="w-3 h-3" />
+              ) : (
+                <Wand2 className="w-3 h-3" />
+              )}
+              {isBrainstorming ? 'Thinking…' : showSuggestions && suggestions.length > 0 ? 'Hide' : 'Brainstorm'}
+            </button>
+            <button
+              onClick={() => onResolve(insight.id)}
+              disabled={isResolving}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-colors cursor-pointer disabled:opacity-50"
+            >
+              {isResolving ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : (
+                <CheckCircle2 className="w-3 h-3" />
+              )}
+              Mark resolved
+            </button>
+          </div>
         )}
       </div>
     </div>
@@ -163,6 +212,8 @@ function AIInsightsSidebarContent() {
   const storyId = useCanvasStore((s) => s.storyId)
   const nodes = useCanvasStore((s) => s.nodes)
   const [showResolved, setShowResolved] = useState(false)
+  // tracks whether analysis has been run at least once this session
+  const [hasRun, setHasRun] = useState(false)
 
   const { data: insights = [], isLoading: insightsLoading } = useAIInsights(storyId)
   const { mutate: runAnalysis, isPending: isAnalysing, data: lastResult, error: analysisError } = useRunAnalysis()
@@ -179,44 +230,63 @@ function AIInsightsSidebarContent() {
   const resolvedInsights = insights.filter((i) => i.status === 'resolved')
   const displayed = showResolved ? insights : unresolvedInsights
 
+  const unresolvedCount = unresolvedInsights.length
+
+  // Results exist if fetched from DB or returned from a run this session
+  const hasResults = insights.length > 0 || hasRun
+
+  const handleRunAnalysis = () => {
+    if (!storyId) return
+    runAnalysis(storyId, { onSuccess: () => setHasRun(true) })
+  }
+
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      {/* Run analysis section */}
-      <div className="px-4 py-4 border-b border-(--line) shrink-0 space-y-3">
-        <button
-          onClick={() => storyId && runAnalysis(storyId)}
-          disabled={isAnalysing || !storyId}
-          className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold bg-linear-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 disabled:opacity-50 disabled:cursor-not-allowed text-white transition-all cursor-pointer shadow-lg shadow-violet-500/30 hover:shadow-violet-500/40"
-        >
-          {isAnalysing ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Analyzing with Granite AI...
-            </>
-          ) : (
-            <>
-              <Sparkles className="w-4 h-4" />
-              Run AI Analysis
-            </>
+      {/* Action area — full CTA before first run, compact re-run after */}
+      {!hasResults ? (
+        <div className="px-4 py-3 border-b border-(--line) shrink-0">
+          <button
+            onClick={handleRunAnalysis}
+            disabled={isAnalysing || !storyId}
+            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium bg-violet-600 hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed text-white transition-colors cursor-pointer shadow-md shadow-violet-500/20"
+          >
+            {isAnalysing ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Analysing with Granite…
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-4 h-4" />
+                Run AI Analysis
+              </>
+            )}
+          </button>
+          {analysisError && !isAnalysing && (
+            <p className="mt-2 text-xs text-center text-rose-500">{analysisError.message}</p>
           )}
-        </button>
-
-        {/* Last result summary */}
-        {lastResult && !isAnalysing && (
-          <div className="p-3 rounded-lg bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800">
-            <p className="text-xs text-violet-700 dark:text-violet-300 leading-relaxed">
-              {lastResult.summary}
-            </p>
-          </div>
-        )}
-        {analysisError && !isAnalysing && (
-          <div className="p-3 rounded-lg bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800">
-            <p className="text-xs text-rose-700 dark:text-rose-300 leading-relaxed">
-              {analysisError.message}
-            </p>
-          </div>
-        )}
-      </div>
+        </div>
+      ) : (
+        <div className="px-4 py-2 border-b border-(--line) shrink-0 flex items-center justify-between">
+          {lastResult && !isAnalysing ? (
+            <p className="text-[11px] text-(--sea-ink-soft) truncate max-w-[160px]">{lastResult.summary}</p>
+          ) : (
+            <span />
+          )}
+          <button
+            onClick={handleRunAnalysis}
+            disabled={isAnalysing || !storyId}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/30 transition-colors cursor-pointer disabled:opacity-50"
+          >
+            {isAnalysing ? (
+              <Loader2 className="w-3 h-3 animate-spin" />
+            ) : (
+              <Sparkles className="w-3 h-3" />
+            )}
+            {isAnalysing ? 'Analysing…' : 'Re-run'}
+          </button>
+        </div>
+      )}
 
       {/* Toggle resolved */}
       {resolvedInsights.length > 0 && (
@@ -257,14 +327,12 @@ function AIInsightsSidebarContent() {
               <Lightbulb className="w-8 h-8 text-violet-500" />
             </div>
             <div className="space-y-2">
-              <p className="text-sm font-semibold text-(--sea-ink)">
-                {unresolvedInsights.length === 0 && resolvedInsights.length > 0
-                  ? 'All issues resolved! 🎉'
-                  : 'No issues found'}
+              <p className="text-sm font-medium text-(--sea-ink)">
+                {hasResults ? 'No issues found' : 'Ready to analyse'}
               </p>
               <p className="text-xs text-(--sea-ink-soft) leading-relaxed max-w-56">
-                {unresolvedInsights.length === 0 && resolvedInsights.length > 0
-                  ? 'Great work! Your story is looking solid.'
+                {hasResults
+                  ? 'Your story looks clean. Use Re-run to check again after making changes.'
                   : 'Run the AI analysis to check your story for continuity issues, world-rule violations, and plot holes.'}
               </p>
             </div>
@@ -299,31 +367,35 @@ export function AIInsightsPanel() {
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetTrigger asChild>
           <button
-            className={`island-shell flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer shadow-lg ${unresolvedCount > 0
-              ? 'text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-900/20'
-              : 'text-(--sea-ink-soft) hover:text-(--sea-ink)'
-              }`}
+            className="island-shell flex items-center gap-2 px-3 py-2 rounded-full text-sm font-medium text-(--sea-ink-soft) hover:text-(--sea-ink) hover:bg-(--line) transition-colors cursor-pointer"
+            title="AI Insights"
           >
-            <BrainCircuit className="w-4 h-4 shrink-0" />
-            <span className="whitespace-nowrap">AI Review</span>
+            <BrainCircuit className="w-4 h-4 text-violet-500" />
+            <span className="hidden sm:inline">AI Review</span>
             {unresolvedCount > 0 && (
-              <span className="w-5 h-5 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
-                {unresolvedCount > 9 ? '9+' : unresolvedCount}
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400">
+                {unresolvedCount}
               </span>
             )}
           </button>
         </SheetTrigger>
-        <SheetContent side="right" className="w-80 p-0 border-(--line) bg-(--surface) flex flex-col">
-          <SheetHeader className="px-4 pt-5 pb-3 border-b border-(--line)">
-            <SheetTitle className="flex items-center gap-2 text-base text-(--sea-ink)">
-              <BrainCircuit className="w-5 h-5 text-violet-500" />
-              AI Review
+        <SheetContent side="right" className="w-80 sm:w-96 p-0 flex flex-col island-shell border-l border-(--line)">
+          <SheetHeader className="px-4 py-4 border-b border-(--line) shrink-0">
+            <div className="flex items-center gap-2">
+              <BrainCircuit className="w-4 h-4 text-violet-500 shrink-0" />
+              <SheetTitle className="flex-1 text-sm font-semibold text-(--sea-ink)">AI Review</SheetTitle>
               {unresolvedCount > 0 && (
-                <span className="ml-auto px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400">
                   {unresolvedCount}
                 </span>
               )}
-            </SheetTitle>
+              <button
+                onClick={() => setOpen(false)}
+                className="p-1.5 rounded-lg text-(--sea-ink-soft) hover:bg-(--line) transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </SheetHeader>
           <div className="flex-1 overflow-hidden">
             <AIInsightsSidebarContent />

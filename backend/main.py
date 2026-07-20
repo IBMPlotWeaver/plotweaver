@@ -53,7 +53,7 @@ def get_granite_model() -> ModelInference:
 
     credentials = Credentials(api_key=api_key, url=url)
     return ModelInference(
-        model_id="ibm/granite-4-h-small",
+        model_id="openai/gpt-oss-120b",
         credentials=credentials,
         project_id=project_id,
         params={
@@ -113,6 +113,39 @@ class ResolveRequest(BaseModel):
     insight_id: str
 
 
+class BrainstormRequest(BaseModel):
+    insight_content: str     # The specific issue to brainstorm fixes for
+    beats: list[StoryBeat]
+    characters: list[Character]
+    world_rules: list[WorldRule]
+
+
+class BrainstormSuggestion(BaseModel):
+    title: str               # Short label, e.g. "Reorder the beats"
+    description: str         # 1–3 sentence actionable suggestion
+
+
+class BrainstormResponse(BaseModel):
+    suggestions: list[BrainstormSuggestion]
+
+
+class ExportRequest(BaseModel):
+    story_id: str
+    beats: list[StoryBeat]
+
+
+class ChapterSummary(BaseModel):
+    beat_id: str
+    timeline_order: int
+    title: str
+    summary: str             # AI-generated chapter paragraph
+
+
+class ExportResponse(BaseModel):
+    chapters: list[ChapterSummary]
+    outline: str             # Full outline as a single formatted string
+
+
 # ── Prompt builder ───────────────────────────────────────────────────────────
 
 def build_analysis_prompt(
@@ -138,10 +171,15 @@ def build_analysis_prompt(
     ) or "  (none)"
 
     return f"""<|system|>
-You are an expert story editor and continuity checker. Analyse the story structure below and identify ONLY real, specific issues. Do NOT invent problems that are not clearly present in the data.
+You are an advanced narrative intelligence agent tasked with performing deep continuity and structural audits on story bibles. Your goal is to find subtle logical gaps, formatting slip-ups, world-building contradictions, and character entity mismatches.
+
+CRITICAL EVALUATION PILLARS:
+1. Strict Identity Tracking: Audit every name used in the story beat summaries against the exact keys defined in the CHARACTERS block. If a beat uses an unmapped name, reference, or alias (e.g., calling an untagged character "Henry" when only "Rabbit" and "Turtle" exist), flag it instantly as a "character" or "continuity" issue.
+2. World-Rule Interaction: Ensure character actions align with the physical constraints of the WORLD RULES. Recognize cause-and-effect relationships (e.g., if a rule says an action causes exhaustion, a character collapsing or sleeping is an expected narrative consequence, not a contradiction).
+3. Spatial & Environmental Context: Evaluate the plausibility of events based on locations. If a scene relies on hidden actions or blind spots (like sneaking past someone unnoticed), verify if the text provides enough environmental justification (like physical cover or camouflage) to make the beat logical.
 
 You must respond with a JSON array (and nothing else). Each element must have exactly these keys:
-- "node_id": the beat id this issue belongs to (string, use the [id:...] shown), or null if it applies to the overall story
+- "node_id": the bare UUID of the beat this issue belongs to (string, copy only the UUID from the [id:...] shown — do NOT include the "id:" prefix), or null if it applies to the overall story
 - "insight_type": one of "continuity", "world_rule", "character", "plot_hole", "pacing"
 - "content": a concise, actionable description of the specific issue (1-3 sentences)
 
@@ -157,6 +195,73 @@ WORLD RULES:
 {rules_text}
 
 Analyse the story and return only the JSON array of issues.
+<|assistant|>
+"""
+
+
+def build_brainstorm_prompt(
+    insight_content: str,
+    beats: list[StoryBeat],
+    characters: list[Character],
+    world_rules: list[WorldRule],
+) -> str:
+    beats_text = "\n".join(
+        f"  Beat #{b.timelineOrder} \"{b.title}\" @ {b.location or 'unknown'}: {b.summary or 'No summary.'}"
+        for b in sorted(beats, key=lambda x: x.timelineOrder)
+    ) or "  (none)"
+
+    chars_text = ", ".join(c.name for c in characters) or "none"
+    rules_text = "\n".join(f"  - \"{r.title}\": {r.description}" for r in world_rules) or "  (none)"
+
+    return f"""<|system|>
+You are a creative story consultant. A writer has identified the following issue in their story and needs concrete, creative suggestions to fix it. Provide exactly 3 suggestions.
+
+You must respond with a JSON array (and nothing else). Each element must have exactly these keys:
+- "title": a short label for the suggestion (5 words or fewer)
+- "description": 1–3 sentences explaining the specific fix or alternative direction
+
+Return only the JSON array. No extra text.
+<|user|>
+IDENTIFIED ISSUE:
+{insight_content}
+
+STORY BEATS (in order):
+{beats_text}
+
+CHARACTERS: {chars_text}
+
+WORLD RULES:
+{rules_text}
+
+Suggest 3 creative ways the writer can fix or work around this issue.
+<|assistant|>
+"""
+
+
+def build_export_prompt(beats: list[StoryBeat]) -> str:
+    beats_text = "\n\n".join(
+        f"Chapter {b.timelineOrder}: \"{b.title}\"\n"
+        f"Location: {b.location or 'unspecified'}\n"
+        f"Characters: {', '.join(b.characterNames) or 'none'}\n"
+        f"Events: {b.summary or 'No summary provided.'}"
+        for b in sorted(beats, key=lambda x: x.timelineOrder)
+    )
+
+    return f"""<|system|>
+You are a professional story editor writing a structured story outline. For each chapter provided, write a single polished paragraph (3–5 sentences) that summarises what happens, reads like a real chapter summary, and could appear in a published story bible.
+
+You must respond with a JSON array (and nothing else). Each element must have exactly these keys:
+- "beat_id": the exact beat id string provided in brackets
+- "summary": the polished chapter summary paragraph
+
+Return only the JSON array.
+<|user|>
+{chr(10).join(
+    f'[beat_id: {b.id}] Chapter {b.timelineOrder}: "{b.title}" — {b.summary or "No summary."}'
+    for b in sorted(beats, key=lambda x: x.timelineOrder)
+)}
+
+Write a polished chapter summary for every chapter above.
 <|assistant|>
 """
 
@@ -204,7 +309,11 @@ def parse_insights(raw_items: list[dict], story_id: str) -> list[dict]:
             insight_type = "continuity"
         node_id = item.get("node_id") or None
         if node_id:
-            node_id = str(node_id).strip() or None
+            node_id = str(node_id).strip()
+            # Strip "id:" prefix if the model included it (e.g. "id:uuid" → "uuid")
+            if node_id.startswith("id:"):
+                node_id = node_id[3:].strip()
+            node_id = node_id or None
 
         result.append({
             "id": str(uuid.uuid4()),
@@ -241,6 +350,12 @@ async def analyze_story(request: AnalyzeRequest):
 
     # Build prompt and call Granite
     prompt = build_analysis_prompt(request.beats, request.characters, request.world_rules)
+
+    print("\n" + "="*60)
+    print("GRANITE PROMPT [analyze]")
+    print("="*60)
+    print(prompt)
+    print("="*60 + "\n")
 
     try:
         model = get_granite_model()
@@ -315,3 +430,110 @@ async def resolve_insight(insight_id: str):
     if not result.data:
         raise HTTPException(status_code=404, detail="Insight not found.")
     return {"status": "resolved", "id": insight_id}
+
+
+@app.post("/api/brainstorm", response_model=BrainstormResponse)
+async def brainstorm(request: BrainstormRequest):
+    """
+    Given a specific story issue, ask Granite for 3 creative fix suggestions.
+
+    Returns a list of BrainstormSuggestion objects (title + description).
+    Does not write to the database — suggestions are ephemeral UI state.
+    """
+    prompt = build_brainstorm_prompt(
+        request.insight_content,
+        request.beats,
+        request.characters,
+        request.world_rules,
+    )
+
+    print("\n" + "="*60)
+    print("GRANITE PROMPT [brainstorm]")
+    print("="*60)
+    print(prompt)
+    print("="*60 + "\n")
+
+    try:
+        model = get_granite_model()
+        response = model.generate_text(prompt=prompt)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"IBM watsonx.ai error: {exc}") from exc
+
+    raw_items = extract_json_array(response)
+
+    suggestions: list[BrainstormSuggestion] = []
+    for item in raw_items:
+        if not isinstance(item, dict):
+            continue
+        title = str(item.get("title", "")).strip()
+        description = str(item.get("description", "")).strip()
+        if title and description:
+            suggestions.append(BrainstormSuggestion(title=title, description=description))
+
+    return BrainstormResponse(suggestions=suggestions[:3])
+
+
+@app.post("/api/export/summaries", response_model=ExportResponse)
+async def export_summaries(request: ExportRequest):
+    """
+    Generate AI chapter summaries for every story beat and return a full outline.
+
+    1. Call Granite with all beats to get a polished paragraph per chapter.
+    2. Merge AI summaries with the original beat data.
+    3. Assemble a plain-text outline string for immediate download/copy.
+    """
+    if not request.beats:
+        return ExportResponse(chapters=[], outline="No story beats to export.")
+
+    sorted_beats = sorted(request.beats, key=lambda b: b.timelineOrder)
+    beat_map = {b.id: b for b in sorted_beats}
+
+    prompt = build_export_prompt(sorted_beats)
+
+    print("\n" + "="*60)
+    print("GRANITE PROMPT [export]")
+    print("="*60)
+    print(prompt)
+    print("="*60 + "\n")
+
+    try:
+        model = get_granite_model()
+        response = model.generate_text(prompt=prompt)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"IBM watsonx.ai error: {exc}") from exc
+
+    raw_items = extract_json_array(response)
+
+    # Build a lookup of beat_id → AI summary
+    ai_summary_map: dict[str, str] = {}
+    for item in raw_items:
+        if isinstance(item, dict):
+            bid = str(item.get("beat_id", "")).strip()
+            summary = str(item.get("summary", "")).strip()
+            if bid and summary:
+                ai_summary_map[bid] = summary
+
+    chapters: list[ChapterSummary] = []
+    for beat in sorted_beats:
+        chapters.append(
+            ChapterSummary(
+                beat_id=beat.id,
+                timeline_order=beat.timelineOrder,
+                title=beat.title,
+                summary=ai_summary_map.get(beat.id, beat.summary or "No summary available."),
+            )
+        )
+
+    # Build plain-text outline
+    outline_lines: list[str] = ["STORY OUTLINE", "=" * 40, ""]
+    for ch in chapters:
+        outline_lines.append(f"Chapter {ch.timeline_order}: {ch.title}")
+        outline_lines.append("-" * len(f"Chapter {ch.timeline_order}: {ch.title}"))
+        outline_lines.append(ch.summary)
+        outline_lines.append("")
+
+    return ExportResponse(chapters=chapters, outline="\n".join(outline_lines))
