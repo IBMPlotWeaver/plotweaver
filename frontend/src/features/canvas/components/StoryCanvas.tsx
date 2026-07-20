@@ -19,8 +19,10 @@ import { WorldRuleNode } from '#/features/canvas/components/nodes/WorldRuleNode'
 import { useUnsavedChangesWarning } from '#/features/canvas/hooks/useUnsavedChangesWarning';
 import { computeAutoLayout } from '#/features/canvas/utils/autoLayout';
 import { AIInsightsPanel } from '#/features/canvas/components/AIInsightsPanel';
+import { ZoomControls } from '#/features/canvas/components/ZoomControls';
 import { useReactFlow } from '@xyflow/react';
 import { useState } from 'react';
+import { useStory } from '#/features/canvas/hooks/useStory';
 
 /** Stable node type map — defined outside component to prevent remount on re-render. */
 const NODE_TYPES = {
@@ -60,6 +62,7 @@ function AutoLayoutOnLoad() {
  */
 export function StoryCanvas() {
   const { storyId } = useParams({ from: '/canvas/$storyId' });
+  const { data: story } = useStory(storyId);
   const nodes = useCanvasStore(state => state.nodes)
   const edges = useCanvasStore(state => state.edges)
   const onNodesChange = useCanvasStore(state => state.onNodesChange)
@@ -134,10 +137,13 @@ export function StoryCanvas() {
         <NodesSidebar />
 
         {/* Toolbar floats at top-center */}
-        <CanvasToolbar storyTitle={`Story — ${storyId}`} />
+        <CanvasToolbar storyTitle={story?.title || 'Loading...'} />
 
         {/* AI Insights panel — slides in from the right */}
         <AIInsightsPanel />
+
+        {/* Zoom controls at the bottom */}
+        <ZoomControls />
 
         <Background
           variant={BackgroundVariant.Dots}
