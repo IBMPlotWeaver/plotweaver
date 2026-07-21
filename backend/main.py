@@ -315,3 +315,44 @@ async def resolve_insight(insight_id: str):
     if not result.data:
         raise HTTPException(status_code=404, detail="Insight not found.")
     return {"status": "resolved", "id": insight_id}
+# ── Export ──────────────────────────────────────────────────────────────────
+
+def story_graph_to_markdown(beats: list[StoryBeat], characters: list[Character], world_rules: list[WorldRule]) -> str:
+    """Convert story graph to markdown outline"""
+    
+    md = "# Story Outline\n\n"
+    
+    # Story Beats (sorted by timeline)
+    md += "## Story Beats\n\n"
+    for beat in sorted(beats, key=lambda x: x.timelineOrder):
+        md += f"### Beat {beat.timelineOrder}: {beat.title}\n"
+        md += f"**Location:** {beat.location}\n"
+        if beat.characterNames:
+            md += f"**Characters:** {', '.join(beat.characterNames)}\n"
+        md += f"\n{beat.summary}\n\n"
+    
+    # Characters
+    if characters:
+        md += "## Characters\n\n"
+        for char in characters:
+            md += f"### {char.name}\n{char.description}\n\n"
+    
+    # World Rules
+    if world_rules:
+        md += "## World Rules\n\n"
+        for rule in world_rules:
+            md += f"### {rule.title}\n{rule.description}\n\n"
+    
+    return md
+
+
+@app.post("/api/stories/export")
+async def export_story(beats: list[StoryBeat], characters: list[Character], world_rules: list[WorldRule]):
+    """Export story graph as markdown outline"""
+    markdown = story_graph_to_markdown(beats, characters, world_rules)
+    
+    return {
+        "status": "success",
+        "format": "markdown",
+        "content": markdown
+    }
