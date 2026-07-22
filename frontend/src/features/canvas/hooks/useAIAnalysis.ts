@@ -26,6 +26,15 @@ export interface AnalyzeResponse {
   summary: string
 }
 
+export interface BrainstormSuggestion {
+  title: string
+  description: string
+}
+
+export interface BrainstormResponse {
+  suggestions: BrainstormSuggestion[]
+}
+
 // ── Fetch existing insights for a story ─────────────────────────────────────
 
 export function useAIInsights(storyId: string | null) {
@@ -159,6 +168,57 @@ export function useResolveInsight(storyId: string | null) {
             .updateNodeData(node.id, { hasAIWarning: warningNodeIds.has(node.id) } as Partial<StoryBeatNodeData>)
         }
       })
+    },
+  })
+}
+
+// ── Brainstorm fixes for a single insight ────────────────────────────────────
+
+export function useBrainstorm() {
+  return useMutation<BrainstormResponse, Error, string>({
+    mutationFn: async (insightContent: string) => {
+      const { nodes } = useCanvasStore.getState()
+
+      const beats = nodes
+        .filter((n) => n.type === 'storyBeat')
+        .map((n) => {
+          const d = n.data as StoryBeatNodeData
+          return {
+            id: n.id,
+            title: d.title,
+            summary: d.summary,
+            location: d.location,
+            timelineOrder: d.timelineOrder,
+            characterNames: d.characterNames ?? [],
+          }
+        })
+
+      const characters = nodes
+        .filter((n) => n.type === 'character')
+        .map((n) => {
+          const d = n.data as CharacterNodeData
+          return { id: n.id, name: d.name, description: d.description }
+        })
+
+      const world_rules = nodes
+        .filter((n) => n.type === 'worldRule')
+        .map((n) => {
+          const d = n.data as WorldRuleNodeData
+          return { id: n.id, title: d.title, description: d.description }
+        })
+
+      const res = await fetch(`${BACKEND_URL}/api/brainstorm`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ insight_content: insightContent, beats, characters, world_rules }),
+      })
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: res.statusText }))
+        throw new Error(err.detail ?? 'Brainstorm failed.')
+      }
+
+      return res.json() as Promise<BrainstormResponse>
     },
   })
 }
