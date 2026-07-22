@@ -129,7 +129,7 @@ function InsightCard({
 
       {/* Content */}
       <div className="px-3 pb-3">
-        <div className={`text-xs text-(--sea-ink) leading-relaxed ${expanded ? '' : 'line-clamp-3'}`}>
+        <div className={`text-sm text-(--sea-ink) leading-relaxed ${expanded ? '' : 'line-clamp-3'}`}>
           {insight.content}
         </div>
 
@@ -190,7 +190,7 @@ function InsightCard({
             <button
               onClick={() => onResolve(insight.id)}
               disabled={isResolving}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-colors cursor-pointer disabled:opacity-50"
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-colors cursor-pointer disabled:opacity-50"
             >
               {isResolving ? (
                 <Loader2 className="w-3 h-3 animate-spin" />
@@ -316,7 +316,7 @@ function AIInsightsSidebarContent() {
           <div className="flex justify-center pt-12">
             <div className="flex flex-col items-center gap-3">
               <Loader2 className="w-6 h-6 text-violet-500 animate-spin" />
-              <p className="text-xs text-(--sea-ink-soft)">Loading insights...</p>
+              <p className="text-sm text-(--sea-ink-soft)">Loading insights...</p>
             </div>
           </div>
         )}
@@ -327,10 +327,10 @@ function AIInsightsSidebarContent() {
               <Lightbulb className="w-8 h-8 text-violet-500" />
             </div>
             <div className="space-y-2">
-              <p className="text-sm font-medium text-(--sea-ink)">
+              <p className="text-base font-medium text-(--sea-ink)">
                 {hasResults ? 'No issues found' : 'Ready to analyse'}
               </p>
-              <p className="text-xs text-(--sea-ink-soft) leading-relaxed max-w-56">
+              <p className="text-sm text-(--sea-ink-soft) leading-relaxed max-w-56">
                 {hasResults
                   ? 'Your story looks clean. Use Re-run to check again after making changes.'
                   : 'Run the AI analysis to check your story for continuity issues, world-rule violations, and plot holes.'}

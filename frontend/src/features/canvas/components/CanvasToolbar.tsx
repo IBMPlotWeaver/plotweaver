@@ -1,6 +1,5 @@
-import { BookOpen, User, Shield, ZoomIn, ZoomOut, Maximize2, Trash2, Save, LayoutGrid, Moon, Sun, FileDown, X, Loader2, Copy, Check } from 'lucide-react';
+import { Maximize2, Trash2, Save, LayoutGrid, Moon, Sun, FileDown, X, Loader2, Copy, Check, ZoomIn, ZoomOut, BookOpen, User, Shield } from 'lucide-react';
 import { useReactFlow } from '@xyflow/react';
-import type { StoryNodeType } from '#/features/canvas/types/canvas.types';
 import { useCanvasStore } from '#/features/canvas/store/useCanvasStore';
 import { useThemeStore } from '#/features/store/useThemeStore';
 import { computeAutoLayout } from '#/features/canvas/utils/autoLayout';
@@ -9,31 +8,11 @@ import { Link } from '@tanstack/react-router';
 import { ArrowLeft } from 'lucide-react';
 import { useExportSummaries } from '#/features/canvas/hooks/useExport';
 import type { ChapterSummary } from '#/features/canvas/hooks/useExport';
+import type { StoryNodeType } from '#/features/canvas/types/canvas.types';
 
 interface CanvasToolbarProps {
   storyTitle?: string;
 }
-
-const NODE_BUTTONS: { type: StoryNodeType; label: string; icon: React.ReactNode; color: string }[] = [
-  {
-    type: 'storyBeat',
-    label: 'Story Beat',
-    icon: <BookOpen className="w-4 h-4" />,
-    color: 'bg-violet-600 hover:bg-violet-700 text-white shadow-violet-500/25'
-  },
-  {
-    type: 'character',
-    label: 'Character',
-    icon: <User className="w-4 h-4" />,
-    color: 'bg-fuchsia-600 hover:bg-fuchsia-700 text-white shadow-fuchsia-500/25'
-  },
-  {
-    type: 'worldRule',
-    label: 'World Rule',
-    icon: <Shield className="w-4 h-4" />,
-    color: 'bg-violet-500 hover:bg-violet-600 text-white shadow-violet-500/25'
-  },
-];
 
 // ── Export modal ─────────────────────────────────────────────────────────────
 
@@ -120,7 +99,7 @@ function ExportModal({
  * Provides node creation, zoom, fit-view, save, theme toggle, and export controls.
  */
 export function CanvasToolbar({ storyTitle = 'Untitled Story' }: CanvasToolbarProps) {
-  const { zoomIn, zoomOut, fitView } = useReactFlow();
+  const { fitView, zoomIn, zoomOut } = useReactFlow();
   const addNode = useCanvasStore(state => state.addNode)
   const deleteNode = useCanvasStore(state => state.deleteNode)
   const selectedNodeId = useCanvasStore(state => state.selectedNodeId)
@@ -160,13 +139,34 @@ export function CanvasToolbar({ storyTitle = 'Untitled Story' }: CanvasToolbarPr
     })
   }
 
+  const NODE_BUTTONS: { type: StoryNodeType; label: string; icon: React.ReactNode; color: string }[] = [
+    {
+      type: 'storyBeat',
+      label: 'Story Beat',
+      icon: <BookOpen className="w-4 h-4" />,
+      color: 'bg-violet-600 hover:bg-violet-700 text-white shadow-violet-500/25'
+    },
+    {
+      type: 'character',
+      label: 'Character',
+      icon: <User className="w-4 h-4" />,
+      color: 'bg-fuchsia-600 hover:bg-fuchsia-700 text-white shadow-fuchsia-500/25'
+    },
+    {
+      type: 'worldRule',
+      label: 'World Rule',
+      icon: <Shield className="w-4 h-4" />,
+      color: 'bg-violet-500 hover:bg-violet-600 text-white shadow-violet-500/25'
+    },
+  ];
+
   return (
     <>
       <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-3 flex-wrap justify-center pointer-events-auto">
         {/* Back to Dashboard */}
         <Link
           to="/dashboard"
-          className="island-shell flex items-center gap-2 px-3 py-2 rounded-full text-sm font-medium text-(--sea-ink-soft) hover:text-(--sea-ink) hover:bg-(--line) transition-colors cursor-pointer"
+          className="island-shell flex items-center gap-2 px-3 py-2 rounded-full text-base font-medium text-(--sea-ink-soft) hover:text-(--sea-ink) hover:bg-(--line) transition-colors cursor-pointer"
           title="Back to Dashboard"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -255,7 +255,7 @@ export function CanvasToolbar({ storyTitle = 'Untitled Story' }: CanvasToolbarPr
         <button
           onClick={handleSave}
           disabled={isSaving}
-          className="island-shell flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium text-(--sea-ink) hover:bg-(--line) transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          className="island-shell flex items-center gap-1.5 px-3 py-2 rounded-full text-base font-medium text-(--sea-ink) hover:bg-(--line) transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           title="Save canvas"
         >
           <Save className={`w-4 h-4 ${isSaving ? 'animate-pulse' : ''}`} />
@@ -284,7 +284,7 @@ export function CanvasToolbar({ storyTitle = 'Untitled Story' }: CanvasToolbarPr
             <button
               onClick={() => deleteNode(selectedNodeId)}
               title="Delete selected node"
-              className="island-shell flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+              className="island-shell flex items-center gap-1.5 px-3 py-2 rounded-full text-base font-medium text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
             >
               <Trash2 className="w-4 h-4" />
               <span className="hidden sm:inline">Delete</span>

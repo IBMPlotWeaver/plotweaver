@@ -5,7 +5,6 @@ import type { TablesInsert } from '#/types/database.types';
 
 export function useCreateStory() {
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
 
   return useMutation({
     mutationFn: async (data: { title: string; description?: string; userId: string }) => {
@@ -24,12 +23,10 @@ export function useCreateStory() {
       if (error) throw error;
       return story;
     },
-    onSuccess: (story) => {
+    onSuccess: () => {
       // Invalidate stories query to refetch
       queryClient.invalidateQueries({ queryKey: ['stories'] });
-      
-      // Navigate to the new story's canvas
-      navigate({ to: '/canvas/$storyId', params: { storyId: story.id } });
+      // Navigation is now handled by QuickCreateModal
     },
   });
 }

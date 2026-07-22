@@ -36,7 +36,7 @@ export const StoryBeatNode = memo(({ id, data, selected }: NodeProps<Node<StoryB
   const hasAIWarning = data.hasAIWarning || false;
   const timelineOrder = data.timelineOrder ?? 0;
 
-  // Dynamically extract mentioned characters from text
+  // Dynamically extract mentioned characters from text with smart partial matching
   const { nodes } = useCanvasStore();
   const textToScan = (editing ? `${draft.title} ${draft.summary}` : `${data.title} ${data.summary}`).toLowerCase();
 
@@ -44,7 +44,19 @@ export const StoryBeatNode = memo(({ id, data, selected }: NodeProps<Node<StoryB
     nodes
       .filter(n => n.type === 'character')
       .map(char => char.data as import('#/features/canvas/types/canvas.types').CharacterNodeData)
-      .filter(charData => charData.name && textToScan.includes(`@${charData.name.toLowerCase()}`))
+      .filter(charData => {
+        if (!charData.name) return false;
+        const fullName = charData.name.toLowerCase();
+        
+        // Check for exact full name match
+        if (textToScan.includes(`@${fullName}`)) return true;
+        
+        // Check for partial matches (any word in the full name)
+        const nameParts = fullName.split(/\s+/);
+        return nameParts.some(part => 
+          part.length > 2 && textToScan.includes(`@${part}`)
+        );
+      })
       .map(charData => charData.name)
   ));
 
@@ -52,7 +64,7 @@ export const StoryBeatNode = memo(({ id, data, selected }: NodeProps<Node<StoryB
     <>
       <NodeResizer minWidth={320} minHeight={220} isVisible={selected} lineClassName="border-violet-500" handleClassName="h-3 w-3 bg-white border-2 border-violet-500 rounded-sm" />
       <div
-        className={`relative w-full h-full min-w-80 min-h-55 flex flex-col rounded-2xl border transition-all duration-200 ${selected
+        className={`relative w-full h-full min-w-80 max-w-120 min-h-55 flex flex-col rounded-2xl border transition-all duration-200 ${selected
           ? 'border-violet-500 shadow-lg shadow-violet-500/30'
           : 'border-(--line) shadow-md'
           }`}
@@ -74,11 +86,11 @@ export const StoryBeatNode = memo(({ id, data, selected }: NodeProps<Node<StoryB
               autoFocus
               value={draft.title}
               onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))}
-              className="flex-1 text-sm font-semibold bg-transparent outline-none border-b border-violet-400 text-(--sea-ink) min-w-0"
+              className="flex-1 text-base font-semibold bg-transparent outline-none border-b border-violet-400 text-(--sea-ink) min-w-0"
               placeholder="Beat Title"
             />
           ) : (
-            <span className="flex-1 text-sm font-semibold text-(--sea-ink) truncate">
+            <span className="flex-1 text-base font-semibold text-(--sea-ink) truncate">
               {data.title}
             </span>
           )}
@@ -102,12 +114,12 @@ export const StoryBeatNode = memo(({ id, data, selected }: NodeProps<Node<StoryB
             <textarea
               value={draft.summary}
               onChange={(e) => setDraft((d) => ({ ...d, summary: e.target.value }))}
-              className="w-full flex-1 min-h-15 text-xs bg-transparent outline-none resize-none text-(--sea-ink-soft) border border-(--line) rounded-lg p-2 wrap-break-word"
+              className="w-full flex-1 min-h-15 text-sm bg-transparent outline-none resize-none text-(--sea-ink-soft) border border-(--line) rounded-lg p-2 wrap-break-word"
               placeholder="Describe the beat. Type @CharacterName to tag characters..."
             />
           ) : (
             <div className="flex-1 overflow-y-auto min-h-0 pr-1 custom-scrollbar">
-              <p className="text-xs text-(--sea-ink-soft) leading-relaxed whitespace-pre-wrap wrap-break-word">
+              <p className="text-sm text-(--sea-ink-soft) leading-relaxed whitespace-pre-wrap wrap-break-word">
                 {data.summary || 'No summary yet...'}
               </p>
             </div>
@@ -120,11 +132,11 @@ export const StoryBeatNode = memo(({ id, data, selected }: NodeProps<Node<StoryB
               <input
                 value={draft.location}
                 onChange={(e) => setDraft((d) => ({ ...d, location: e.target.value }))}
-                className="flex-1 text-xs bg-transparent outline-none border-b border-(--line) text-(--sea-ink-soft) min-w-0"
+                className="flex-1 text-sm bg-transparent outline-none border-b border-(--line) text-(--sea-ink-soft) min-w-0"
                 placeholder="Location"
               />
             ) : (
-              <span className="text-xs text-(--sea-ink-soft) truncate">
+              <span className="text-sm text-(--sea-ink-soft) truncate">
                 {data.location || 'No location set'}
               </span>
             )}

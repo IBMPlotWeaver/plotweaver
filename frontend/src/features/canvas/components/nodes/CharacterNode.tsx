@@ -38,7 +38,7 @@ export const CharacterNode = memo(({ id, data, selected }: NodeProps<Node<Charac
     <>
       <NodeResizer minWidth={256} minHeight={200} isVisible={selected} lineClassName="border-fuchsia-500" handleClassName="h-3 w-3 bg-white border-2 border-fuchsia-500 rounded-sm" />
       <div
-        className={`relative w-full h-full min-w-64 min-h-50 flex flex-col rounded-2xl border transition-all duration-200 ${selected
+        className={`relative w-full h-full min-w-64 max-w-96 min-h-50 flex flex-col rounded-2xl border transition-all duration-200 ${selected
           ? 'border-fuchsia-500 shadow-lg shadow-fuchsia-500/30'
           : 'border-(--line) shadow-md'
           }`}
@@ -54,11 +54,11 @@ export const CharacterNode = memo(({ id, data, selected }: NodeProps<Node<Charac
               autoFocus
               value={draft.name}
               onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
-              className="flex-1 text-sm font-semibold bg-transparent outline-none border-b border-fuchsia-400 text-(--sea-ink) min-w-0"
+              className="flex-1 text-base font-semibold bg-transparent outline-none border-b border-fuchsia-400 text-(--sea-ink) min-w-0"
               placeholder="Character Name"
             />
           ) : (
-            <span className="flex-1 text-sm font-semibold text-(--sea-ink) truncate">
+            <span className="flex-1 text-base font-semibold text-(--sea-ink) truncate">
               {data.name}
             </span>
           )}
@@ -73,12 +73,12 @@ export const CharacterNode = memo(({ id, data, selected }: NodeProps<Node<Charac
             <textarea
               value={draft.description}
               onChange={(e) => setDraft((d) => ({ ...d, description: e.target.value }))}
-              className="w-full flex-1 min-h-20 text-xs bg-transparent outline-none resize-none text-(--sea-ink-soft) border border-(--line) rounded-lg p-2 wrap-break-word"
+              className="w-full flex-1 min-h-20 text-sm bg-transparent outline-none resize-none text-(--sea-ink-soft) border border-(--line) rounded-lg p-2 wrap-break-word"
               placeholder="Describe this character's background, personality, and role..."
             />
           ) : (
             <div className="flex-1 overflow-y-auto min-h-0 pr-1 custom-scrollbar">
-              <p className="text-xs text-(--sea-ink-soft) leading-relaxed whitespace-pre-wrap wrap-break-word">
+              <p className="text-sm text-(--sea-ink-soft) leading-relaxed whitespace-pre-wrap wrap-break-word">
                 {data.description || 'No description yet...'}
               </p>
             </div>
