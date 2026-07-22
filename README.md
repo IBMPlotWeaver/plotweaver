@@ -1,38 +1,55 @@
-# Plotweaver
+# PlotWeaver - AI-Powered Story Assistant
 
-Welcome to the Plotweaver project.
+## Overview
+PlotWeaver is an AI-powered visual storytelling workspace that helps writers build better stories using connected nodes and intelligent AI analysis.
 
-## Technologies Used
+## Problem Solved
+Writers spend hours manually checking for plot holes, continuity issues, and character inconsistencies. PlotWeaver automates this using IBM Granite AI.
 
-This project utilizes the following technologies. Please refer to their official documentation for more information and reference:
+## Key Features
+✅ **Visual Story Canvas** - Drag & drop story beats, characters, world rules
+✅ **AI Continuity Checker** - Detects plot holes using IBM Granite
+✅ **Export to Markdown** - Convert your visual story to readable outline
+✅ **Insights System** - Get actionable feedback on your story
 
-### Frontend
+## Tech Stack
+- **Frontend**: React Flow, TanStack, TailwindCSS
+- **Backend**: FastAPI (Python)
+- **AI**: IBM Granite (via watsonx.ai)
+- **Database**: Supabase
+- **Tools**: IBM Bob
 
-- **[React Flow](https://reactflow.dev/)**: A highly customizable library for building node-based UIs and diagrams.
-- **[TanStack Router](https://tanstack.com/router/latest)**: A fully type-safe router for React applications.
-- **[TanStack Query](https://tanstack.com/query/latest)**: Powerful asynchronous state management and data fetching for React.
-- **[TailwindCSS](https://tailwindcss.com/docs/installation/using-vite)**: A utility-first CSS framework for rapid UI development.
-- **[Shadcn UI](https://ui.shadcn.com/docs)**: Beautifully designed, accessible components.
-- **[TypeScript](https://www.typescriptlang.org/docs/)**: A strongly typed programming language that builds on JavaScript.
-- **[Lucide](https://lucide.dev/guide/)**: A beautiful and consistent icon toolkit.
+## How to Run
 
 ### Backend
+```bash
+cd backend
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
+uvicorn main:app --reload
+```
 
-- **[FAST API](https://fastapi.tiangolo.com/)**: A modern, fast (high-performance), web framework for building APIs with Python.
-- **[Docling](https://docling-project.github.io/docling/)**: A powerful tool for parsing various document formats.
-- **[Supabase](https://supabase.com/docs)**: An open source Firebase alternative providing database, authentication, and more.
+### Frontend
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-### AI Tools
+Visit: http://localhost:5173
 
-- **[Langflow](https://docs.langflow.org/)**: A visual framework for building multi-agent and RAG applications.
-- **[IBM Bob](https://bob.ibm.com/docs/ide)**: IDE and tools.
-- **[IBM Granite](https://www.ibm.com/granite)**: IBM's flagship series of LLM foundation models.
+## API Endpoints
 
-### Version Control
+- `POST /api/stories/export` - Export story as markdown
+- `POST /api/analyze` - Analyze story with AI
+- `GET /api/insights/{story_id}` - Get AI insights
 
-- **[Github](https://docs.github.com/en)**: A cloud-based platform and hosting service that allows developers to collaborate on, manage, and store their code repositories.
-- **[Git](https://git-scm.com/docs/git)**: A local, distributed version control system used by developers to track changes in source code files over time.
+## Team
+- Darl: Frontend
+- Karan: AI Integration  
+- Michael: Backend & Export Features
 
-## Setup Instructions
-
-For specific backend setup instructions, including creating a virtual environment and installing dependencies, please see the [Backend Setup Guide](backend/SETUP.md).
+## IBM Tools Used
+- IBM Bob: Development partner
+- IBM Granite: AI analysis engine
