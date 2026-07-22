@@ -28,7 +28,7 @@ export function Hero() {
         PlotWeaver replaces long text documents with connected nodes. Our AI acts as your Creative Partner, detecting plot holes, maintaining continuity, and brainstorming idea without ever writing the story for you.
       </p>
       <div className="flex flex-col sm:flex-row gap-4 animate-blur-reveal opacity-0 [animation-delay:450ms]">
-        <Button onClick={() => { navigate({ to: "/signup" }) }} size="lg" className="bg-violet-600 hover:bg-violet-700 text-white rounded-full px-8 shadow-lg shadow-violet-500/25">
+        <Button onClick={() => { navigate({ to: "/canvas/guest" }) }} size="lg" className="bg-violet-600 hover:bg-violet-700 text-white rounded-full px-8 shadow-lg shadow-violet-500/25">
           Start Weaving for Free
         </Button>
         <Button onClick={handleScrollToDemo} size="lg" variant="outline" className="rounded-full px-8 border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300">

@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as LayoutRouteImport } from './routes/_layout'
 import { Route as DashboardLayoutRouteImport } from './routes/_dashboard-layout'
 import { Route as LayoutIndexRouteImport } from './routes/_layout/index'
+import { Route as CanvasGuestRouteImport } from './routes/canvas.guest'
 import { Route as CanvasStoryIdRouteImport } from './routes/canvas.$storyId'
 import { Route as LayoutSignupRouteImport } from './routes/_layout/signup'
 import { Route as LayoutLoginRouteImport } from './routes/_layout/login'
@@ -30,6 +31,11 @@ const LayoutIndexRoute = LayoutIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => LayoutRoute,
+} as any)
+const CanvasGuestRoute = CanvasGuestRouteImport.update({
+  id: '/canvas/guest',
+  path: '/canvas/guest',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const CanvasStoryIdRoute = CanvasStoryIdRouteImport.update({
   id: '/canvas/$storyId',
@@ -65,6 +71,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LayoutLoginRoute
   '/signup': typeof LayoutSignupRoute
   '/canvas/$storyId': typeof CanvasStoryIdRoute
+  '/canvas/guest': typeof CanvasGuestRoute
 }
 export interface FileRoutesByTo {
   '/': typeof LayoutIndexRoute
@@ -73,6 +80,7 @@ export interface FileRoutesByTo {
   '/login': typeof LayoutLoginRoute
   '/signup': typeof LayoutSignupRoute
   '/canvas/$storyId': typeof CanvasStoryIdRoute
+  '/canvas/guest': typeof CanvasGuestRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -83,15 +91,28 @@ export interface FileRoutesById {
   '/_layout/login': typeof LayoutLoginRoute
   '/_layout/signup': typeof LayoutSignupRoute
   '/canvas/$storyId': typeof CanvasStoryIdRoute
+  '/canvas/guest': typeof CanvasGuestRoute
   '/_layout/': typeof LayoutIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/dashboard' | '/profile' | '/login' | '/signup' | '/canvas/$storyId'
+    | '/'
+    | '/dashboard'
+    | '/profile'
+    | '/login'
+    | '/signup'
+    | '/canvas/$storyId'
+    | '/canvas/guest'
   fileRoutesByTo: FileRoutesByTo
   to:
-    '/' | '/dashboard' | '/profile' | '/login' | '/signup' | '/canvas/$storyId'
+    | '/'
+    | '/dashboard'
+    | '/profile'
+    | '/login'
+    | '/signup'
+    | '/canvas/$storyId'
+    | '/canvas/guest'
   id:
     | '__root__'
     | '/_dashboard-layout'
@@ -101,6 +122,7 @@ export interface FileRouteTypes {
     | '/_layout/login'
     | '/_layout/signup'
     | '/canvas/$storyId'
+    | '/canvas/guest'
     | '/_layout/'
   fileRoutesById: FileRoutesById
 }
@@ -108,6 +130,7 @@ export interface RootRouteChildren {
   DashboardLayoutRoute: typeof DashboardLayoutRouteWithChildren
   LayoutRoute: typeof LayoutRouteWithChildren
   CanvasStoryIdRoute: typeof CanvasStoryIdRoute
+  CanvasGuestRoute: typeof CanvasGuestRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -132,6 +155,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof LayoutIndexRouteImport
       parentRoute: typeof LayoutRoute
+    }
+    '/canvas/guest': {
+      id: '/canvas/guest'
+      path: '/canvas/guest'
+      fullPath: '/canvas/guest'
+      preLoaderRoute: typeof CanvasGuestRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/canvas/$storyId': {
       id: '/canvas/$storyId'
@@ -204,6 +234,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardLayoutRoute: DashboardLayoutRouteWithChildren,
   LayoutRoute: LayoutRouteWithChildren,
   CanvasStoryIdRoute: CanvasStoryIdRoute,
+  CanvasGuestRoute: CanvasGuestRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

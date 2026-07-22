@@ -25,6 +25,7 @@ import {
 import { useCanvasStore } from '#/features/canvas/store/useCanvasStore'
 import { useAIInsights, useRunAnalysis, useResolveInsight } from '#/features/canvas/hooks/useAIAnalysis'
 import type { AIInsight } from '#/features/canvas/hooks/useAIAnalysis'
+import { useGuestCanvas } from '#/features/canvas/hooks/useGuestCanvas'
 
 // ── Insight type metadata ────────────────────────────────────────────────────
 
@@ -164,9 +165,27 @@ function AIInsightsSidebarContent() {
   const nodes = useCanvasStore((s) => s.nodes)
   const [showResolved, setShowResolved] = useState(false)
 
+  const isGuestMode = !storyId
+  const { canUseAI, getRemainingAICount, incrementAICount } = useGuestCanvas()
+
   const { data: insights = [], isLoading: insightsLoading } = useAIInsights(storyId)
   const { mutate: runAnalysis, isPending: isAnalysing, data: lastResult, error: analysisError } = useRunAnalysis()
   const { mutate: resolveInsight, isPending: isResolving, variables: resolvingId } = useResolveInsight(storyId)
+
+  const handleRunAnalysis = () => {
+    if (isGuestMode) {
+      if (!canUseAI()) {
+        return
+      }
+      incrementAICount()
+    }
+    if (storyId) {
+      runAnalysis(storyId)
+    }
+  }
+
+  const aiDisabled = isGuestMode ? !canUseAI() : !storyId
+  const remainingCount = isGuestMode ? getRemainingAICount() : null
 
   // Build beat id → title lookup
   const beatTitleMap = new Map(
@@ -184,8 +203,8 @@ function AIInsightsSidebarContent() {
       {/* Run analysis section */}
       <div className="px-4 py-4 border-b border-(--line) shrink-0 space-y-3">
         <button
-          onClick={() => storyId && runAnalysis(storyId)}
-          disabled={isAnalysing || !storyId}
+          onClick={handleRunAnalysis}
+          disabled={isAnalysing || aiDisabled}
           className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-base font-semibold bg-linear-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 disabled:opacity-50 disabled:cursor-not-allowed text-white transition-all cursor-pointer shadow-lg shadow-violet-500/30 hover:shadow-violet-500/40"
         >
           {isAnalysing ? (
@@ -197,9 +216,19 @@ function AIInsightsSidebarContent() {
             <>
               <Sparkles className="w-4 h-4" />
               Run AI Analysis
+              {remainingCount !== null && ` (${remainingCount}/3)`}
             </>
           )}
         </button>
+
+        {/* Guest mode AI limit warning */}
+        {isGuestMode && remainingCount === 0 && (
+          <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+            <p className="text-sm text-amber-700 dark:text-amber-300 leading-relaxed">
+              You've used all 3 free AI analyses. Sign up to get unlimited access!
+            </p>
+          </div>
+        )}
 
         {/* Last result summary */}
         {lastResult && !isAnalysing && (
