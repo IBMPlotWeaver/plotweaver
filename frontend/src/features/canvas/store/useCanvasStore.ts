@@ -298,29 +298,53 @@ export const useCanvasStore = create<
       const currentCharacterIds = characterNodes.map((n) => n.id)
       const currentWorldRuleIds = worldRuleNodes.map((n) => n.id)
 
-      // Delete story_nodes not in current canvas
-      const { error: deleteBeatsError } = await supabase
-        .from('story_nodes')
-        .delete()
-        .eq('story_id', storyId)
-        .not('id', 'in', `(${currentStoryBeatIds.length > 0 ? currentStoryBeatIds.join(',') : 'null'})`)
-      if (deleteBeatsError && deleteBeatsError.code !== 'PGRST116') throw deleteBeatsError
+      // Safely delete story_nodes no longer in the canvas
+      if (currentStoryBeatIds.length > 0) {
+        const { error: deleteBeatsError } = await supabase
+          .from('story_nodes')
+          .delete()
+          .eq('story_id', storyId)
+          .filter('id', 'not.in', `(${currentStoryBeatIds.join(',')})`)
+        if (deleteBeatsError) throw deleteBeatsError
+      } else {
+        const { error: deleteBeatsError } = await supabase
+          .from('story_nodes')
+          .delete()
+          .eq('story_id', storyId)
+        if (deleteBeatsError) throw deleteBeatsError
+      }
 
-      // Delete characters not in current canvas
-      const { error: deleteCharsError } = await supabase
-        .from('characters')
-        .delete()
-        .eq('story_id', storyId)
-        .not('id', 'in', `(${currentCharacterIds.length > 0 ? currentCharacterIds.join(',') : 'null'})`)
-      if (deleteCharsError && deleteCharsError.code !== 'PGRST116') throw deleteCharsError
+      // Safely delete characters no longer in the canvas
+      if (currentCharacterIds.length > 0) {
+        const { error: deleteCharsError } = await supabase
+          .from('characters')
+          .delete()
+          .eq('story_id', storyId)
+          .filter('id', 'not.in', `(${currentCharacterIds.join(',')})`)
+        if (deleteCharsError) throw deleteCharsError
+      } else {
+        const { error: deleteCharsError } = await supabase
+          .from('characters')
+          .delete()
+          .eq('story_id', storyId)
+        if (deleteCharsError) throw deleteCharsError
+      }
 
-      // Delete world_rules not in current canvas
-      const { error: deleteRulesError } = await supabase
-        .from('world_rules')
-        .delete()
-        .eq('story_id', storyId)
-        .not('id', 'in', `(${currentWorldRuleIds.length > 0 ? currentWorldRuleIds.join(',') : 'null'})`)
-      if (deleteRulesError && deleteRulesError.code !== 'PGRST116') throw deleteRulesError
+      // Safely delete world_rules no longer in the canvas
+      if (currentWorldRuleIds.length > 0) {
+        const { error: deleteRulesError } = await supabase
+          .from('world_rules')
+          .delete()
+          .eq('story_id', storyId)
+          .filter('id', 'not.in', `(${currentWorldRuleIds.join(',')})`)
+        if (deleteRulesError) throw deleteRulesError
+      } else {
+        const { error: deleteRulesError } = await supabase
+          .from('world_rules')
+          .delete()
+          .eq('story_id', storyId)
+        if (deleteRulesError) throw deleteRulesError
+      }
 
       // Upsert story_nodes
       if (storyBeatNodes.length > 0) {

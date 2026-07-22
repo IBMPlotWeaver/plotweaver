@@ -50,6 +50,7 @@ export function useMigrateGuestCanvas() {
           title: guestTitle,
           nodes,
           edges,
+          user_id: userId,
         },
       });
 
