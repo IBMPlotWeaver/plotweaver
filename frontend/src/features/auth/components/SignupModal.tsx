@@ -42,14 +42,30 @@ export function SignupModal({ open, onOpenChange, onSuccess }: SignupModalProps)
       options: { data: { full_name: formData.name } },
     });
 
-    setLoading(false);
-
     if (authError) {
+      setLoading(false);
       setError(authError.message);
-    } else if (data.user) {
-      setSuccess(true);
-      reset();
-      onSuccess?.(data.user.id);
+      return;
+    }
+
+    if (data.user) {
+      // Forcefully login to ensure session tokens are actively set before migrating
+      const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password,
+      });
+
+      setLoading(false);
+
+      if (loginError) {
+        setError("Account created, but automatic login failed. Please sign in manually.");
+      } else if (loginData.user) {
+        setSuccess(true);
+        reset();
+        onSuccess?.(loginData.user.id);
+      }
+    } else {
+      setLoading(false);
     }
   };
 

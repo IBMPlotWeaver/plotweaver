@@ -43,16 +43,31 @@ export function useMigrateGuestCanvas() {
       const { nodes, edges } = guestData;
 
       const guestTitle = localStorage.getItem('plotweaver_guest_title') || 'My Story';
+      const payload = {
+        title: guestTitle,
+        nodes,
+        edges,
+        user_id: userId,
+        userId: userId, // Added camelCase to match the Edge Function!
+      };
+
+      console.log('--- MIGRATION DEBUG ---');
+      console.log('Sending payload to save-guest-canvas:', {
+        title: payload.title,
+        userId: payload.userId,
+        user_id: payload.user_id,
+        nodesCount: payload.nodes.length,
+        edgesCount: payload.edges.length
+      });
 
       // Invoke the Edge Function
       const { data, error: functionError } = await supabase.functions.invoke('save-guest-canvas', {
-        body: {
-          title: guestTitle,
-          nodes,
-          edges,
-          user_id: userId,
-        },
+        body: payload,
       });
+
+      console.log('Response from save-guest-canvas:', data);
+      console.log('Error from save-guest-canvas (if any):', functionError);
+      console.log('-----------------------');
 
       if (functionError) {
         throw new Error('Migration failed: ' + functionError.message);
@@ -67,6 +82,18 @@ export function useMigrateGuestCanvas() {
       }
 
       const storyId = data.storyId as string;
+
+      // Update the user_id on the story from the frontend
+      const { error: updateError } = await supabase
+        .from('stories')
+        .update({ user_id: userId })
+        .eq('id', storyId);
+
+      if (updateError) {
+        console.warn('Warning: Could not update user_id on the frontend (Possible RLS restriction):', updateError);
+        // We won't throw here to avoid blocking the migration completion, 
+        // but if it fails, you may need to adjust RLS policies or use a second edge function.
+      }
 
       // Clear guest canvas after successful migration
       clearGuestCanvas();
@@ -107,7 +134,11 @@ export function useMigrateGuestCanvas() {
     
     if (storyId) {
       setMigrationState({ showDialog: false, userId: null });
-      navigate({ to: '/canvas/$storyId', params: { storyId } });
+      
+      // Wait 2 seconds before redirecting so the dashboard fetches the newly saved story
+      setTimeout(() => {
+        navigate({ to: '/dashboard' });
+      }, 2000);
     }
   }, [migrationState.userId, migrateGuestCanvas, navigate]);
 

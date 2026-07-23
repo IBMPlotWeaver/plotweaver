@@ -172,7 +172,7 @@ export function StoryCanvas({ isGuestMode = false }: { isGuestMode?: boolean }) 
       <div className="relative w-screen h-screen overflow-hidden bg-(--bg-base)">
         {/* Guest Mode Banner - Compact and positioned outside canvas */}
         {isGuestMode && (
-          <div className="fixed top-0 left-0 right-0 z-40 bg-gradient-to-r from-violet-600 to-fuchsia-500 text-white px-4 py-2 flex items-center justify-center shadow-lg">
+          <div className="fixed top-0 left-0 right-0 z-40 bg-linear-to-r from-violet-600 to-fuchsia-500 text-white px-4 py-2 flex items-center justify-center shadow-lg">
             <div className="flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <p className="text-sm font-medium">
@@ -183,68 +183,68 @@ export function StoryCanvas({ isGuestMode = false }: { isGuestMode?: boolean }) 
         )}
         <div className={isGuestMode ? 'h-full pt-11' : 'h-full'}>
           <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          nodeTypes={NODE_TYPES}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          onNodeClick={handleNodeClick}
-          onPaneClick={handlePaneClick}
-          selectionMode={SelectionMode.Partial}
-          fitView
-          fitViewOptions={{ padding: 0.3 }}
-          proOptions={{ hideAttribution: true }}
-          defaultEdgeOptions={{
-            animated: true,
-            style: { strokeWidth: 2, stroke: 'var(--lagoon)' },
-          }}
-        >
-          <AutoLayoutOnLoad />
-
-          {/* Sidebar inside ReactFlow so useReactFlow() context is available */}
-          <NodesSidebar />
-
-          {/* Toolbar floats at top-center */}
-          <CanvasToolbar 
-            storyTitle={displayTitle} 
-            isGuestMode={isGuestMode}
-            onTitleChange={handleTitleChange}
-            onGuestSave={() => setShowSignupModal(true)}
-            onGuestReset={handleGuestReset}
-          />
-
-          {/* AI Insights panel — slides in from the right */}
-          <AIInsightsPanel />
-
-          {/* Zoom controls at the bottom */}
-          <ZoomControls />
-
-          <Background
-            variant={BackgroundVariant.Dots}
-            gap={24}
-            size={1.5}
-            color="var(--line)"
-          />
-
-          <Controls
-            className="bottom-6! left-6! md:left-72! shadow-lg! rounded-2xl! border! border-(--line)! bg-(--surface)! backdrop-blur! transition-all duration-300"
-            showInteractive={false}
-          />
-
-          <MiniMap
-            className="bottom-6! right-6! rounded-2xl! border! border-(--line)! bg-(--surface)! shadow-lg!"
-            nodeColor={(node) => {
-              const colors: Record<string, string> = {
-                storyBeat: '#8b5cf6',
-                character: '#d946ef',
-                worldRule: '#7c3aed',
-              };
-              return colors[node.type ?? ''] ?? '#94a3b8';
+            nodes={nodes}
+            edges={edges}
+            nodeTypes={NODE_TYPES}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            onNodeClick={handleNodeClick}
+            onPaneClick={handlePaneClick}
+            selectionMode={SelectionMode.Partial}
+            fitView
+            fitViewOptions={{ padding: 0.3 }}
+            proOptions={{ hideAttribution: true }}
+            defaultEdgeOptions={{
+              animated: true,
+              style: { strokeWidth: 2, stroke: 'var(--lagoon)' },
             }}
-            maskColor="rgba(0,0,0,0.04)"
-          />
-        </ReactFlow>
+          >
+            <AutoLayoutOnLoad />
+
+            {/* Sidebar inside ReactFlow so useReactFlow() context is available */}
+            <NodesSidebar />
+
+            {/* Toolbar floats at top-center */}
+            <CanvasToolbar
+              storyTitle={displayTitle}
+              isGuestMode={isGuestMode}
+              onTitleChange={handleTitleChange}
+              onGuestSave={() => setShowSignupModal(true)}
+              onGuestReset={handleGuestReset}
+            />
+
+            {/* AI Insights panel — slides in from the right */}
+            <AIInsightsPanel />
+
+            {/* Zoom controls at the bottom */}
+            <ZoomControls />
+
+            <Background
+              variant={BackgroundVariant.Dots}
+              gap={24}
+              size={1.5}
+              color="var(--line)"
+            />
+
+            <Controls
+              className="bottom-6! left-6! md:left-72! shadow-lg! rounded-2xl! border! border-(--line)! bg-(--surface)! backdrop-blur! transition-all duration-300"
+              showInteractive={false}
+            />
+
+            <MiniMap
+              className="bottom-6! right-6! rounded-2xl! border! border-(--line)! bg-(--surface)! shadow-lg!"
+              nodeColor={(node) => {
+                const colors: Record<string, string> = {
+                  storyBeat: '#8b5cf6',
+                  character: '#d946ef',
+                  worldRule: '#7c3aed',
+                };
+                return colors[node.type ?? ''] ?? '#94a3b8';
+              }}
+              maskColor="rgba(0,0,0,0.04)"
+            />
+          </ReactFlow>
         </div>
       </div>
     </>

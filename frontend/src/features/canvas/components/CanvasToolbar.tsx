@@ -1,4 +1,4 @@
-import { Maximize2, Trash2, Save, LayoutGrid, Moon, Sun, Edit2, ArrowLeft, RotateCcw, FileDown, X, Loader2, Copy, Check, ZoomIn, ZoomOut, BookOpen, User, Shield } from 'lucide-react';
+import { Maximize2, Trash2, Save, LayoutGrid, Moon, Sun, Edit2, ArrowLeft, RotateCcw, FileDown, X, Loader2, Copy, Check, ZoomIn, ZoomOut } from 'lucide-react';
 import { useReactFlow } from '@xyflow/react';
 import { useCanvasStore } from '#/features/canvas/store/useCanvasStore';
 import { useThemeStore } from '#/features/store/useThemeStore';
@@ -16,7 +16,7 @@ import {
 import { Button } from '#/features/shadcn/components/ui/button';
 import { useExportSummaries } from '#/features/canvas/hooks/useExport';
 import type { ChapterSummary } from '#/features/canvas/hooks/useExport';
-import type { StoryNodeType } from '#/features/canvas/types/canvas.types';
+// import type { StoryNodeType } from '#/features/canvas/types/canvas.types';
 
 interface CanvasToolbarProps {
   storyTitle?: string;
