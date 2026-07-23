@@ -1,6 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '#/lib/supabase';
-import { useNavigate } from '@tanstack/react-router';
 import type { TablesInsert } from '#/types/database.types';
 
 export function useCreateStory() {

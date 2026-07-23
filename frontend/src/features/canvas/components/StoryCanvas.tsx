@@ -24,8 +24,7 @@ import { useReactFlow } from '@xyflow/react';
 import { useStory } from '#/features/canvas/hooks/useStory';
 import { useGuestCanvas } from '#/features/canvas/hooks/useGuestCanvas';
 import { useMigrateGuestCanvas } from '#/features/canvas/hooks/useMigrateGuestCanvas';
-import { Button } from '#/features/shadcn/components/ui/button';
-import { AlertCircle, Save } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { SignupModal } from '#/features/auth/components/SignupModal';
 import { MigrateGuestCanvasDialog } from '#/features/canvas/components/MigrateGuestCanvasDialog';
 

@@ -128,7 +128,7 @@ export function QuickCreateModal({ isOpen, onClose, storyId }: QuickCreateModalP
       // Insert characters
       if (characters.length > 0) {
         const { error: charsError } = await supabase.from('characters').insert(
-          characters.map((node, index) => ({
+          characters.map((node) => ({
             id: node.id,
             story_id: storyId,
             name: node.title,
