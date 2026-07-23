@@ -26,7 +26,7 @@ export function Header() {
           <Link to="/login" className="text-sm font-medium text-(--sea-ink-soft) hover:text-violet-600 dark:hover:text-violet-400 transition-colors">
             Log In
           </Link>
-          <Link to="/signup">
+          <Link to="/canvas/guest">
             <Button className="bg-violet-600 hover:bg-violet-700 text-white rounded-full px-6 shadow-md shadow-violet-500/20 border-none">
               Get Started
             </Button>

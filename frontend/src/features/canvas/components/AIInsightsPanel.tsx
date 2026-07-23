@@ -27,6 +27,7 @@ import {
 import { useCanvasStore } from '#/features/canvas/store/useCanvasStore'
 import { useAIInsights, useRunAnalysis, useResolveInsight, useBrainstorm } from '#/features/canvas/hooks/useAIAnalysis'
 import type { AIInsight, BrainstormSuggestion } from '#/features/canvas/hooks/useAIAnalysis'
+import { useGuestCanvas } from '#/features/canvas/hooks/useGuestCanvas'
 
 // ── Insight type metadata ────────────────────────────────────────────────────
 
@@ -212,12 +213,18 @@ function AIInsightsSidebarContent() {
   const storyId = useCanvasStore((s) => s.storyId)
   const nodes = useCanvasStore((s) => s.nodes)
   const [showResolved, setShowResolved] = useState(false)
+
+  const isGuestMode = !storyId
+  const { canUseAI, getRemainingAICount } = useGuestCanvas()
   // tracks whether analysis has been run at least once this session
   const [hasRun, setHasRun] = useState(false)
 
   const { data: insights = [], isLoading: insightsLoading } = useAIInsights(storyId)
   const { mutate: runAnalysis, isPending: isAnalysing, data: lastResult, error: analysisError } = useRunAnalysis()
   const { mutate: resolveInsight, isPending: isResolving, variables: resolvingId } = useResolveInsight(storyId)
+
+  const aiDisabled = isGuestMode ? !canUseAI() : !storyId
+  const remainingCount = isGuestMode ? getRemainingAICount() : null
 
   // Build beat id → title lookup
   const beatTitleMap = new Map(
@@ -230,8 +237,6 @@ function AIInsightsSidebarContent() {
   const resolvedInsights = insights.filter((i) => i.status === 'resolved')
   const displayed = showResolved ? insights : unresolvedInsights
 
-  const unresolvedCount = unresolvedInsights.length
-
   // Results exist if fetched from DB or returned from a run this session
   const hasResults = insights.length > 0 || hasRun
 
@@ -242,51 +247,53 @@ function AIInsightsSidebarContent() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      {/* Action area — full CTA before first run, compact re-run after */}
-      {!hasResults ? (
-        <div className="px-4 py-3 border-b border-(--line) shrink-0">
-          <button
-            onClick={handleRunAnalysis}
-            disabled={isAnalysing || !storyId}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium bg-violet-600 hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed text-white transition-colors cursor-pointer shadow-md shadow-violet-500/20"
-          >
-            {isAnalysing ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Analysing with Granite…
-              </>
-            ) : (
-              <>
-                <Sparkles className="w-4 h-4" />
-                Run AI Analysis
-              </>
-            )}
-          </button>
-          {analysisError && !isAnalysing && (
-            <p className="mt-2 text-xs text-center text-rose-500">{analysisError.message}</p>
-          )}
-        </div>
-      ) : (
-        <div className="px-4 py-2 border-b border-(--line) shrink-0 flex items-center justify-between">
-          {lastResult && !isAnalysing ? (
-            <p className="text-[11px] text-(--sea-ink-soft) truncate max-w-[160px]">{lastResult.summary}</p>
+      {/* Run analysis section */}
+      <div className="px-4 py-4 border-b border-(--line) shrink-0 space-y-3">
+        <button
+          onClick={handleRunAnalysis}
+          disabled={isAnalysing || aiDisabled}
+          className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-base font-semibold bg-linear-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 disabled:opacity-50 disabled:cursor-not-allowed text-white transition-all cursor-pointer shadow-lg shadow-violet-500/30 hover:shadow-violet-500/40"
+        >
+          {isAnalysing ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Analyzing with Granite AI...
+            </>
           ) : (
-            <span />
+            <>
+              <Sparkles className="w-4 h-4" />
+              Run AI Analysis
+              {remainingCount !== null && ` (${remainingCount}/3)`}
+            </>
           )}
-          <button
-            onClick={handleRunAnalysis}
-            disabled={isAnalysing || !storyId}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/30 transition-colors cursor-pointer disabled:opacity-50"
-          >
-            {isAnalysing ? (
-              <Loader2 className="w-3 h-3 animate-spin" />
-            ) : (
-              <Sparkles className="w-3 h-3" />
-            )}
-            {isAnalysing ? 'Analysing…' : 'Re-run'}
-          </button>
-        </div>
-      )}
+        </button>
+
+        {/* Guest mode AI limit warning */}
+        {isGuestMode && remainingCount === 0 && (
+          <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+            <p className="text-sm text-amber-700 dark:text-amber-300 leading-relaxed">
+              You've used all 3 free AI analyses. Sign up to get unlimited access!
+            </p>
+          </div>
+        )}
+
+        {/* Last result summary */}
+        {lastResult && !isAnalysing && (
+          <div className="p-3 rounded-lg bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800">
+            <p className="text-sm text-violet-700 dark:text-violet-300 leading-relaxed">
+              {lastResult.summary}
+            </p>
+          </div>
+        )}
+        {analysisError && !isAnalysing && (
+          <div className="p-3 rounded-lg bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800">
+            <p className="text-sm text-rose-700 dark:text-rose-300 leading-relaxed">
+              {analysisError.message}
+            </p>
+          </div>
+        )}
+      </div>
+
 
       {/* Toggle resolved */}
       {resolvedInsights.length > 0 && (

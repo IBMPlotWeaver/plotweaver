@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   ReactFlow,
   Background,
@@ -21,8 +21,12 @@ import { computeAutoLayout } from '#/features/canvas/utils/autoLayout';
 import { AIInsightsPanel } from '#/features/canvas/components/AIInsightsPanel';
 import { ZoomControls } from '#/features/canvas/components/ZoomControls';
 import { useReactFlow } from '@xyflow/react';
-import { useState } from 'react';
 import { useStory } from '#/features/canvas/hooks/useStory';
+import { useGuestCanvas } from '#/features/canvas/hooks/useGuestCanvas';
+import { useMigrateGuestCanvas } from '#/features/canvas/hooks/useMigrateGuestCanvas';
+import { AlertCircle } from 'lucide-react';
+import { SignupModal } from '#/features/auth/components/SignupModal';
+import { MigrateGuestCanvasDialog } from '#/features/canvas/components/MigrateGuestCanvasDialog';
 
 /** Stable node type map — defined outside component to prevent remount on re-render. */
 const NODE_TYPES = {
@@ -60,9 +64,27 @@ function AutoLayoutOnLoad() {
  * Main story canvas page. Renders the ReactFlow canvas with custom nodes,
  * a collapsible nodes sidebar, a floating toolbar, minimap, and background grid.
  */
-export function StoryCanvas() {
-  const { storyId } = useParams({ from: '/canvas/$storyId' });
-  const { data: story } = useStory(storyId);
+export function StoryCanvas({ isGuestMode = false }: { isGuestMode?: boolean }) {
+  const params = useParams({ strict: false });
+  const storyId = isGuestMode ? null : (params as { storyId?: string }).storyId;
+  const { data: story } = useStory(storyId || '');
+  const { loadGuestCanvas, getRemainingAICount, clearGuestCanvas } = useGuestCanvas();
+  const {
+    promptMigration,
+    handleSave,
+    handleDiscard,
+    closeDialog,
+    showDialog: showMigrationDialog,
+    isMigrating
+  } = useMigrateGuestCanvas();
+
+  const [showSignupModal, setShowSignupModal] = useState(false);
+  const [guestTitle, setGuestTitle] = useState(() => {
+    if (isGuestMode) {
+      return localStorage.getItem('plotweaver_guest_title') || 'My Story';
+    }
+    return 'My Story';
+  });
   const nodes = useCanvasStore(state => state.nodes)
   const edges = useCanvasStore(state => state.edges)
   const onNodesChange = useCanvasStore(state => state.onNodesChange)
@@ -78,17 +100,19 @@ export function StoryCanvas() {
 
   // Load canvas data when component mounts or storyId changes
   useEffect(() => {
-    if (storyId) {
+    if (isGuestMode) {
+      loadGuestCanvas();
+    } else if (storyId) {
       setStoryId(storyId);
       loadCanvas(storyId).catch((error) => {
         console.error('Failed to load canvas:', error);
       });
     }
-  }, [storyId, loadCanvas, setStoryId]);
+  }, [isGuestMode, storyId, loadCanvas, loadGuestCanvas, setStoryId]);
 
-  // Auto-save canvas periodically (every 30 seconds)
+  // Auto-save canvas periodically (every 30 seconds for authenticated, handled by hook for guest)
   useEffect(() => {
-    if (!storyId) return;
+    if (isGuestMode || !storyId) return;
 
     const interval = setInterval(() => {
       if (!useCanvasStore.getState().hasUnsavedChanges) return;
@@ -98,7 +122,7 @@ export function StoryCanvas() {
     }, 30000);
 
     return () => clearInterval(interval);
-  }, [storyId, saveCanvas]);
+  }, [isGuestMode, storyId, saveCanvas]);
 
   const handleNodeClick = useCallback(
     (_: React.MouseEvent, node: { id: string }) => {
@@ -111,65 +135,118 @@ export function StoryCanvas() {
     setSelectedNodeId(null);
   }, [setSelectedNodeId]);
 
+  const handleSignupSuccess = (userId: string) => {
+    setShowSignupModal(false);
+    promptMigration(userId);
+  };
+
+  const handleTitleChange = (newTitle: string) => {
+    setGuestTitle(newTitle);
+    if (isGuestMode) {
+      localStorage.setItem('plotweaver_guest_title', newTitle);
+    }
+  };
+
+  const handleGuestReset = () => {
+    clearGuestCanvas();
+    localStorage.removeItem('plotweaver_guest_title');
+    setGuestTitle('My Story');
+  };
+
+  const displayTitle = isGuestMode ? guestTitle : (story?.title || 'Loading...');
+
   return (
-    <div className="relative w-screen h-screen overflow-hidden bg-(--bg-base)">
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        nodeTypes={NODE_TYPES}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        onNodeClick={handleNodeClick}
-        onPaneClick={handlePaneClick}
-        selectionMode={SelectionMode.Partial}
-        fitView
-        fitViewOptions={{ padding: 0.3 }}
-        proOptions={{ hideAttribution: true }}
-        defaultEdgeOptions={{
-          animated: true,
-          style: { strokeWidth: 2, stroke: 'var(--lagoon)' },
-        }}
-      >
-        <AutoLayoutOnLoad />
+    <>
+      <SignupModal
+        open={showSignupModal}
+        onOpenChange={setShowSignupModal}
+        onSuccess={handleSignupSuccess}
+      />
+      <MigrateGuestCanvasDialog
+        open={showMigrationDialog}
+        onOpenChange={closeDialog}
+        onSave={handleSave}
+        onDiscard={handleDiscard}
+        isMigrating={isMigrating}
+      />
+      <div className="relative w-screen h-screen overflow-hidden bg-(--bg-base)">
+        {/* Guest Mode Banner - Compact and positioned outside canvas */}
+        {isGuestMode && (
+          <div className="fixed top-0 left-0 right-0 z-40 bg-linear-to-r from-violet-600 to-fuchsia-500 text-white px-4 py-2 flex items-center justify-center shadow-lg">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <p className="text-sm font-medium">
+                Guest Mode • AI: {getRemainingAICount()}/3 remaining
+              </p>
+            </div>
+          </div>
+        )}
+        <div className={isGuestMode ? 'h-full pt-11' : 'h-full'}>
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            nodeTypes={NODE_TYPES}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            onNodeClick={handleNodeClick}
+            onPaneClick={handlePaneClick}
+            selectionMode={SelectionMode.Partial}
+            fitView
+            fitViewOptions={{ padding: 0.3 }}
+            proOptions={{ hideAttribution: true }}
+            defaultEdgeOptions={{
+              animated: true,
+              style: { strokeWidth: 2, stroke: 'var(--lagoon)' },
+            }}
+          >
+            <AutoLayoutOnLoad />
 
-        {/* Sidebar inside ReactFlow so useReactFlow() context is available */}
-        <NodesSidebar />
+            {/* Sidebar inside ReactFlow so useReactFlow() context is available */}
+            <NodesSidebar />
 
-        {/* Toolbar floats at top-center */}
-        <CanvasToolbar storyTitle={story?.title || 'Loading...'} />
+            {/* Toolbar floats at top-center */}
+            <CanvasToolbar
+              storyTitle={displayTitle}
+              isGuestMode={isGuestMode}
+              onTitleChange={handleTitleChange}
+              onGuestSave={() => setShowSignupModal(true)}
+              onGuestReset={handleGuestReset}
+            />
 
-        {/* AI Insights panel — slides in from the right */}
-        <AIInsightsPanel />
+            {/* AI Insights panel — slides in from the right */}
+            <AIInsightsPanel />
 
-        {/* Zoom controls at the bottom */}
-        <ZoomControls />
+            {/* Zoom controls at the bottom */}
+            <ZoomControls />
 
-        <Background
-          variant={BackgroundVariant.Dots}
-          gap={24}
-          size={1.5}
-          color="var(--line)"
-        />
+            <Background
+              variant={BackgroundVariant.Dots}
+              gap={24}
+              size={1.5}
+              color="var(--line)"
+            />
 
-        <Controls
-          className="bottom-6! left-6! md:left-72! shadow-lg! rounded-2xl! border! border-(--line)! bg-(--surface)! backdrop-blur! transition-all duration-300"
-          showInteractive={false}
-        />
+            <Controls
+              className="bottom-6! left-6! md:left-72! shadow-lg! rounded-2xl! border! border-(--line)! bg-(--surface)! backdrop-blur! transition-all duration-300"
+              showInteractive={false}
+            />
 
-        <MiniMap
-          className="bottom-6! right-6! rounded-2xl! border! border-(--line)! bg-(--surface)! shadow-lg!"
-          nodeColor={(node) => {
-            const colors: Record<string, string> = {
-              storyBeat: '#8b5cf6',
-              character: '#d946ef',
-              worldRule: '#7c3aed',
-            };
-            return colors[node.type ?? ''] ?? '#94a3b8';
-          }}
-          maskColor="rgba(0,0,0,0.04)"
-        />
-      </ReactFlow>
-    </div>
+            <MiniMap
+              className="bottom-6! right-6! rounded-2xl! border! border-(--line)! bg-(--surface)! shadow-lg!"
+              nodeColor={(node) => {
+                const colors: Record<string, string> = {
+                  storyBeat: '#8b5cf6',
+                  character: '#d946ef',
+                  worldRule: '#7c3aed',
+                };
+                return colors[node.type ?? ''] ?? '#94a3b8';
+              }}
+              maskColor="rgba(0,0,0,0.04)"
+            />
+          </ReactFlow>
+        </div>
+      </div>
+    </>
   );
 }

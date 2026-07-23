@@ -8,6 +8,8 @@ import { Link, useNavigate } from '@tanstack/react-router';
 import { supabase } from '#/lib/supabase';
 import { useAuthUIStore } from '#/features/auth/store/useAuthUIStore';
 import { signupSchema, type SignupFormValues } from '#/features/auth/schemas/signupSchema';
+import { useMigrateGuestCanvas } from '#/features/canvas/hooks/useMigrateGuestCanvas';
+import { MigrateGuestCanvasDialog } from '#/features/canvas/components/MigrateGuestCanvasDialog';
 
 /**
  * Signup page content. Header and Aurora background are
@@ -27,6 +29,15 @@ export function SignupPage() {
   const reset = useAuthUIStore(state => state.reset)
   const success = useAuthUIStore(state => state.success)
   const setSuccess = useAuthUIStore(state => state.setSuccess)
+  const { 
+    promptMigration, 
+    handleSave, 
+    handleDiscard, 
+    closeDialog,
+    showDialog, 
+    isMigrating,
+    hasGuestCanvas 
+  } = useMigrateGuestCanvas();
 
   useEffect(() => {
     reset();
@@ -38,7 +49,7 @@ export function SignupPage() {
     setError(null);
     setSuccess(false);
 
-    const { error: authError } = await supabase.auth.signUp({
+    const { data, error: authError } = await supabase.auth.signUp({
       email: formData.email,
       password: formData.password,
       options: { data: { full_name: formData.name } },
@@ -50,12 +61,26 @@ export function SignupPage() {
       setError(authError.message);
     } else {
       setSuccess(true);
-      navigate({ to: '/login' });
+      
+      // Check if there's a guest canvas to migrate
+      if (data.user && hasGuestCanvas) {
+        promptMigration(data.user.id);
+      } else {
+        navigate({ to: '/login' });
+      }
     }
   };
 
   return (
-    <div className="grow flex items-center justify-center p-6">
+    <>
+      <MigrateGuestCanvasDialog
+        open={showDialog}
+        onOpenChange={closeDialog}
+        onSave={handleSave}
+        onDiscard={handleDiscard}
+        isMigrating={isMigrating}
+      />
+      <div className="grow flex items-center justify-center p-6">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold tracking-tight mb-2 display-title mt-4">Create an account</h1>
@@ -146,5 +171,6 @@ export function SignupPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

@@ -8,6 +8,8 @@ import { Link, useNavigate } from '@tanstack/react-router';
 import { supabase } from '#/lib/supabase';
 import { useAuthUIStore } from '#/features/auth/store/useAuthUIStore';
 import { loginSchema, type LoginFormValues } from '#/features/auth/schemas/loginSchema';
+import { useMigrateGuestCanvas } from '#/features/canvas/hooks/useMigrateGuestCanvas';
+import { MigrateGuestCanvasDialog } from '#/features/canvas/components/MigrateGuestCanvasDialog';
 
 /**
  * Login page content. Header and Aurora background are
@@ -23,6 +25,15 @@ export function LoginPage() {
   const setLoading = useAuthUIStore(state => state.setLoading)
   const setError = useAuthUIStore(state => state.setError)
   const reset = useAuthUIStore(state => state.reset)
+  const { 
+    promptMigration, 
+    handleSave, 
+    handleDiscard, 
+    closeDialog,
+    showDialog, 
+    isMigrating,
+    hasGuestCanvas 
+  } = useMigrateGuestCanvas();
 
   useEffect(() => {
     reset();
@@ -42,13 +53,26 @@ export function LoginPage() {
 
     if (authError) {
       setError(authError.message);
-    } else if (data.session) {
-      navigate({ to: '/dashboard' });
+    } else if (data.session && data.user) {
+      // Check if there's a guest canvas to migrate
+      if (hasGuestCanvas) {
+        promptMigration(data.user.id);
+      } else {
+        navigate({ to: '/dashboard' });
+      }
     }
   };
 
   return (
-    <div className="grow flex items-center justify-center p-6">
+    <>
+      <MigrateGuestCanvasDialog
+        open={showDialog}
+        onOpenChange={closeDialog}
+        onSave={handleSave}
+        onDiscard={handleDiscard}
+        isMigrating={isMigrating}
+      />
+      <div className="grow flex items-center justify-center p-6">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold tracking-tight mb-2 display-title mt-4">Welcome back</h1>
@@ -114,5 +138,6 @@ export function LoginPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

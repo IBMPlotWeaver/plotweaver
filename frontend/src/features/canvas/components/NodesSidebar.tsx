@@ -351,7 +351,7 @@ function DesktopSidebar({ totalCount, onItemClick }: DesktopSidebarProps) {
 
   return (
     <div
-      className={`flex flex-col h-screen transition-all duration-300 ease-in-out ${collapsed ? 'w-14' : 'w-72'
+      className={`flex flex-col h-full transition-all duration-300 ease-in-out ${collapsed ? 'w-14' : 'w-72'
         }`}
     >
       <div className="island-shell h-full flex flex-col rounded-none rounded-r-2xl border-l-0 overflow-hidden shadow-2xl">
