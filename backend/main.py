@@ -206,7 +206,17 @@ class BrainstormResponse(BaseModel):
 
 class ExportRequest(BaseModel):
     story_id: str
-    beats: list[StoryBeat]
+    beats: list[StoryBeat] = []
+    characters: list[Character] = []
+    world_rules: list[WorldRule] = []
+    locations: list[Location] = []
+    objects: list[ObjectNode] = []
+    events: list[Event] = []
+    relationships: list[Relationship] = []
+    conflicts: list[Conflict] = []
+    goals: list[Goal] = []
+    secrets: list[Secret] = []
+    threads: list[Thread] = []
 
 
 class ChapterSummary(BaseModel):
@@ -429,7 +439,35 @@ Generate 3 creative ways the writer can fix or work around this issue.
 """
 
 
-def build_export_prompt(beats: list[StoryBeat]) -> str:
+def build_export_prompt(
+    beats: list[StoryBeat],
+    characters: list[Character] = None,
+    world_rules: list[WorldRule] = None,
+    locations: list[Location] = None,
+    objects: list[ObjectNode] = None,
+    events: list[Event] = None,
+    relationships: list[Relationship] = None,
+    conflicts: list[Conflict] = None,
+    goals: list[Goal] = None,
+    secrets: list[Secret] = None,
+    threads: list[Thread] = None,
+) -> str:
+    characters = characters or []
+    world_rules = world_rules or []
+    locations = locations or []
+    objects = objects or []
+    events = events or []
+    relationships = relationships or []
+    conflicts = conflicts or []
+    goals = goals or []
+    secrets = secrets or []
+    threads = threads or []
+
+    chars_text = "\n".join(f"  - {c.name}: {c.description}" for c in characters) or "none"
+    rules_text = "\n".join(f"  - {r.title}: {r.description}" for r in world_rules) or "none"
+    locs_text = "\n".join(f"  - {l.name}: {l.description}" for l in locations) or "none"
+    objs_text = "\n".join(f"  - {o.name}: {o.properties}" for o in objects) or "none"
+
     beats_text = "\n\n".join(
         f"Chapter {b.timelineOrder}: \"{b.title}\"\n"
         f"Location: {b.location or 'unspecified'}\n"
@@ -452,6 +490,13 @@ Respond ONLY with a JSON array. Each element must have exactly these keys:
 ]
 Do not include any thoughts or extra text, only the JSON array.
 <|user|>
+<story_context>
+<characters>{chars_text}</characters>
+<world_rules>{rules_text}</world_rules>
+<locations>{locs_text}</locations>
+<objects>{objs_text}</objects>
+</story_context>
+
 <chapters_to_summarize>
 {chr(10).join(
     f'[beat_id: {b.id}] Chapter {b.timelineOrder}: "{b.title}" — {b.summary or "No summary."}'
@@ -696,7 +741,19 @@ async def export_summaries(request: ExportRequest):
     sorted_beats = sorted(request.beats, key=lambda b: b.timelineOrder)
     beat_map = {b.id: b for b in sorted_beats}
 
-    prompt = build_export_prompt(sorted_beats)
+    prompt = build_export_prompt(
+        sorted_beats, 
+        request.characters, 
+        request.world_rules,
+        request.locations,
+        request.objects,
+        request.events,
+        request.relationships,
+        request.conflicts,
+        request.goals,
+        request.secrets,
+        request.threads
+    )
 
     print("\n" + "="*60)
     print("GRANITE PROMPT [export]")
