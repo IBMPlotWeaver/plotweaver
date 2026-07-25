@@ -31,7 +31,7 @@ import { useReactFlow } from '@xyflow/react';
 import { useStory } from '#/features/canvas/hooks/useStory';
 import { useGuestCanvas } from '#/features/canvas/hooks/useGuestCanvas';
 import { useMigrateGuestCanvas } from '#/features/canvas/hooks/useMigrateGuestCanvas';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Loader2 } from 'lucide-react';
 import { SignupModal } from '#/features/auth/components/SignupModal';
 import { MigrateGuestCanvasDialog } from '#/features/canvas/components/MigrateGuestCanvasDialog';
 
@@ -93,6 +93,7 @@ export function StoryCanvas({ isGuestMode = false }: { isGuestMode?: boolean }) 
   } = useMigrateGuestCanvas();
 
   const [showSignupModal, setShowSignupModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [guestTitle, setGuestTitle] = useState(() => {
     if (isGuestMode) {
       return localStorage.getItem('plotweaver_guest_title') || 'My Story';
@@ -116,11 +117,16 @@ export function StoryCanvas({ isGuestMode = false }: { isGuestMode?: boolean }) 
   useEffect(() => {
     if (isGuestMode) {
       loadGuestCanvas();
+      setIsLoading(false);
     } else if (storyId) {
       setStoryId(storyId);
-      loadCanvas(storyId).catch((error) => {
-        console.error('Failed to load canvas:', error);
-      });
+      setIsLoading(true);
+      loadCanvas(storyId)
+        .then(() => setIsLoading(false))
+        .catch((error) => {
+          console.error('Failed to load canvas:', error);
+          setIsLoading(false);
+        });
     }
   }, [isGuestMode, storyId, loadCanvas, loadGuestCanvas, setStoryId]);
 
@@ -196,6 +202,12 @@ export function StoryCanvas({ isGuestMode = false }: { isGuestMode?: boolean }) 
           </div>
         )}
         <div className={isGuestMode ? 'h-full pt-11' : 'h-full'}>
+          {isLoading && (
+            <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-(--bg-base)/80 backdrop-blur-sm animate-in fade-in duration-300">
+              <Loader2 className="w-10 h-10 text-violet-500 animate-spin mb-4" />
+              <p className="text-lg font-medium text-(--sea-ink)">Loading canvas...</p>
+            </div>
+          )}
           <ReactFlow
             nodes={nodes}
             edges={edges}
