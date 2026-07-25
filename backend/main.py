@@ -79,6 +79,65 @@ class Character(BaseModel):
     id: str
     name: str
     description: str
+    traits: list[str] = []
+    goals: list[str] = []
+    secrets: list[str] = []
+    arc_stage: str = ""
+    voice_notes: str = ""
+
+class Location(BaseModel):
+    id: str
+    name: str
+    description: str
+    connected_locations: list[str] = []
+
+class ObjectNode(BaseModel):
+    id: str
+    name: str
+    properties: str = ""
+    current_owner: str = ""
+    current_location: str = ""
+    significance: str = ""
+
+class Event(BaseModel):
+    id: str
+    description: str
+    timeline_position: int = 0
+    participants: list[str] = []
+    consequences: str = ""
+
+class Relationship(BaseModel):
+    id: str
+    source_character_id: str
+    target_character_id: str
+    trust_level: str = ""
+    history: str = ""
+    status: str = ""
+
+class Conflict(BaseModel):
+    id: str
+    parties: list[str] = []
+    stakes: str = ""
+    resolution_status: str = ""
+
+class Goal(BaseModel):
+    id: str
+    owning_character_id: str
+    status: str = ""
+    obstacles: str = ""
+
+class Secret(BaseModel):
+    id: str
+    holder_id: str
+    content: str
+    known_by: list[str] = []
+    reveal_status: str = ""
+
+class Thread(BaseModel):
+    id: str
+    description: str
+    resolution_status: str = ""
+    last_referenced_event_id: str = ""
 
 
 class WorldRule(BaseModel):
@@ -89,9 +148,17 @@ class WorldRule(BaseModel):
 
 class AnalyzeRequest(BaseModel):
     story_id: str
-    beats: list[StoryBeat]
-    characters: list[Character]
-    world_rules: list[WorldRule]
+    beats: list[StoryBeat] = []
+    characters: list[Character] = []
+    world_rules: list[WorldRule] = []
+    locations: list[Location] = []
+    objects: list[ObjectNode] = []
+    events: list[Event] = []
+    relationships: list[Relationship] = []
+    conflicts: list[Conflict] = []
+    goals: list[Goal] = []
+    secrets: list[Secret] = []
+    threads: list[Thread] = []
 
 
 class AIInsight(BaseModel):
@@ -115,9 +182,17 @@ class ResolveRequest(BaseModel):
 
 class BrainstormRequest(BaseModel):
     insight_content: str     # The specific issue to brainstorm fixes for
-    beats: list[StoryBeat]
-    characters: list[Character]
-    world_rules: list[WorldRule]
+    beats: list[StoryBeat] = []
+    characters: list[Character] = []
+    world_rules: list[WorldRule] = []
+    locations: list[Location] = []
+    objects: list[ObjectNode] = []
+    events: list[Event] = []
+    relationships: list[Relationship] = []
+    conflicts: list[Conflict] = []
+    goals: list[Goal] = []
+    secrets: list[Secret] = []
+    threads: list[Thread] = []
 
 
 class BrainstormSuggestion(BaseModel):
@@ -152,7 +227,23 @@ def build_analysis_prompt(
     beats: list[StoryBeat],
     characters: list[Character],
     world_rules: list[WorldRule],
+    locations: list[Location] = None,
+    objects: list[ObjectNode] = None,
+    events: list[Event] = None,
+    relationships: list[Relationship] = None,
+    conflicts: list[Conflict] = None,
+    goals: list[Goal] = None,
+    secrets: list[Secret] = None,
+    threads: list[Thread] = None,
 ) -> str:
+    locations = locations or []
+    objects = objects or []
+    events = events or []
+    relationships = relationships or []
+    conflicts = conflicts or []
+    goals = goals or []
+    secrets = secrets or []
+    threads = threads or []
     beats_text = "\n".join(
         f"  Beat #{b.timelineOrder} [id:{b.id}] \"{b.title}\" @ {b.location or 'unknown'}\n"
         f"    Characters: {', '.join(b.characterNames) or 'none'}\n"
@@ -170,31 +261,83 @@ def build_analysis_prompt(
         for r in world_rules
     ) or "  (none)"
 
+    locs_text = "\n".join(f"  - {l.name} [id:{l.id}]: {l.description}" for l in locations) or "  (none)"
+    objs_text = "\n".join(f"  - {o.name} [id:{o.id}] (Owner: {o.current_owner}, Loc: {o.current_location}): {o.properties}" for o in objects) or "  (none)"
+    events_text = "\n".join(f"  - Event [id:{e.id}] (Timeline: {e.timeline_position}): {e.description}\n    Participants: {', '.join(e.participants) or 'none'}\n    Consequences: {e.consequences}" for e in events) or "  (none)"
+    rels_text = "\n".join(f"  - Relationship [id:{r.id}] (Char {r.source_character_id} -> Char {r.target_character_id}): Trust {r.trust_level} - {r.history} - Status: {r.status}" for r in relationships) or "  (none)"
+    confs_text = "\n".join(f"  - Conflict [id:{c.id}] (Parties: {', '.join(c.parties)}): Stakes: {c.stakes} - Status: {c.resolution_status}" for c in conflicts) or "  (none)"
+    goals_text = "\n".join(f"  - Goal [id:{g.id}] (Char {g.owning_character_id}): Status {g.status} - Obstacles: {g.obstacles}" for g in goals) or "  (none)"
+    secs_text = "\n".join(f"  - Secret [id:{s.id}] (Holder {s.holder_id}): {s.content} - Known by: {', '.join(s.known_by)} - Reveal: {s.reveal_status}" for s in secrets) or "  (none)"
+    threads_text = "\n".join(f"  - Thread [id:{t.id}]: {t.description} - Status: {t.resolution_status} - Last Event: {t.last_referenced_event_id}" for t in threads) or "  (none)"
+
     return f"""<|system|>
-You are an advanced narrative intelligence agent tasked with performing deep continuity and structural audits on story bibles. Your goal is to find subtle logical gaps, formatting slip-ups, world-building contradictions, and character entity mismatches.
+You are an expert narrative intelligence agent and structural editor. Your task is to perform a deep continuity and structural audit on the provided story bible. You must identify logical gaps, timeline contradictions, world-building violations, and character inconsistencies.
 
 CRITICAL EVALUATION PILLARS:
-1. Strict Identity Tracking: Audit every name used in the story beat summaries against the exact keys defined in the CHARACTERS block. If a beat uses an unmapped name, reference, or alias (e.g., calling an untagged character "Henry" when only "Rabbit" and "Turtle" exist), flag it instantly as a "character" or "continuity" issue.
-2. World-Rule Interaction: Ensure character actions align with the physical constraints of the WORLD RULES. Recognize cause-and-effect relationships (e.g., if a rule says an action causes exhaustion, a character collapsing or sleeping is an expected narrative consequence, not a contradiction).
-3. Spatial & Environmental Context: Evaluate the plausibility of events based on locations. If a scene relies on hidden actions or blind spots (like sneaking past someone unnoticed), verify if the text provides enough environmental justification (like physical cover or camouflage) to make the beat logical.
+1. Strict Identity Tracking: Audit every name used in the story against the <characters> block. Flag any unmapped names, references, or aliases.
+2. World-Rule Interaction: Ensure character actions align with the physical constraints of the <world_rules>. 
+3. Spatial & Environmental Context: Evaluate the plausibility of events based on the <locations> constraints.
+4. Expanded Elements: Ensure strict continuity across <objects>, <events>, <relationships>, <conflicts>, <goals>, <secrets>, and <threads>.
 
-You must respond with a JSON array (and nothing else). Each element must have exactly these keys:
-- "node_id": the bare UUID of the beat this issue belongs to (string, copy only the UUID from the [id:...] shown — do NOT include the "id:" prefix), or null if it applies to the overall story
-- "insight_type": one of "continuity", "world_rule", "character", "plot_hole", "pacing"
-- "content": a concise, actionable description of the specific issue (1-3 sentences)
-
+OUTPUT FORMAT:
+First, write a brief <reasoning> block where you think step-by-step about potential contradictions across the elements.
+Then, output a JSON array of the identified issues. The JSON array must use the following schema:
+[
+  {{
+    "node_id": "the bare UUID of the beat or element this issue belongs to (string), or null if it applies to the overall story",
+    "insight_type": "continuity" | "world_rule" | "character" | "plot_hole" | "pacing",
+    "content": "A concise, actionable description of the specific issue (1-3 sentences)"
+  }}
+]
 If there are NO issues, return an empty array: []
 <|user|>
-STORY BEATS (in timeline order):
+Here is the story bible context:
+
+<story_beats>
 {beats_text}
+</story_beats>
 
-CHARACTERS:
+<characters>
 {chars_text}
+</characters>
 
-WORLD RULES:
+<world_rules>
 {rules_text}
+</world_rules>
 
-Analyse the story and return only the JSON array of issues.
+<locations>
+{locs_text}
+</locations>
+
+<objects>
+{objs_text}
+</objects>
+
+<events>
+{events_text}
+</events>
+
+<relationships>
+{rels_text}
+</relationships>
+
+<conflicts>
+{confs_text}
+</conflicts>
+
+<goals>
+{goals_text}
+</goals>
+
+<secrets>
+{secs_text}
+</secrets>
+
+<threads>
+{threads_text}
+</threads>
+
+Analyze the story, write your reasoning, and then provide the JSON array.
 <|assistant|>
 """
 
@@ -204,7 +347,23 @@ def build_brainstorm_prompt(
     beats: list[StoryBeat],
     characters: list[Character],
     world_rules: list[WorldRule],
+    locations: list[Location] = None,
+    objects: list[ObjectNode] = None,
+    events: list[Event] = None,
+    relationships: list[Relationship] = None,
+    conflicts: list[Conflict] = None,
+    goals: list[Goal] = None,
+    secrets: list[Secret] = None,
+    threads: list[Thread] = None,
 ) -> str:
+    locations = locations or []
+    objects = objects or []
+    events = events or []
+    relationships = relationships or []
+    conflicts = conflicts or []
+    goals = goals or []
+    secrets = secrets or []
+    threads = threads or []
     beats_text = "\n".join(
         f"  Beat #{b.timelineOrder} \"{b.title}\" @ {b.location or 'unknown'}: {b.summary or 'No summary.'}"
         for b in sorted(beats, key=lambda x: x.timelineOrder)
@@ -212,28 +371,60 @@ def build_brainstorm_prompt(
 
     chars_text = ", ".join(c.name for c in characters) or "none"
     rules_text = "\n".join(f"  - \"{r.title}\": {r.description}" for r in world_rules) or "  (none)"
+    
+    locs_text = ", ".join(l.name for l in locations) or "none"
+    objs_text = ", ".join(o.name for o in objects) or "none"
+    confs_text = "\n".join(f"  - Conflict: {c.stakes} ({c.resolution_status})" for c in conflicts) or "  (none)"
+    goals_text = "\n".join(f"  - Goal: {g.status} - {g.obstacles}" for g in goals) or "  (none)"
 
     return f"""<|system|>
-You are a creative story consultant. A writer has identified the following issue in their story and needs concrete, creative suggestions to fix it. Provide exactly 3 suggestions.
+You are an elite creative writing consultant and story architect. A writer has identified a specific issue in their story and needs concrete, highly creative, and distinct suggestions to fix it. Provide exactly 3 actionable suggestions.
 
-You must respond with a JSON array (and nothing else). Each element must have exactly these keys:
-- "title": a short label for the suggestion (5 words or fewer)
-- "description": 1–3 sentences explaining the specific fix or alternative direction
-
-Return only the JSON array. No extra text.
+OUTPUT FORMAT:
+First, write a brief <brainstorming> block analyzing the root cause of the issue and exploring potential angles for a fix.
+Then, provide your final suggestions as a JSON array. Each element must have exactly these keys:
+[
+  {{
+    "title": "A short, punchy label for the suggestion (5 words or fewer)",
+    "description": "1-3 sentences explaining the specific fix or alternative direction. Be actionable and reference story elements directly."
+  }}
+]
 <|user|>
-IDENTIFIED ISSUE:
+<identified_issue>
 {insight_content}
+</identified_issue>
 
-STORY BEATS (in order):
+<story_context>
+<beats>
 {beats_text}
+</beats>
 
-CHARACTERS: {chars_text}
+<characters>
+{chars_text}
+</characters>
 
-WORLD RULES:
+<world_rules>
 {rules_text}
+</world_rules>
 
-Suggest 3 creative ways the writer can fix or work around this issue.
+<locations>
+{locs_text}
+</locations>
+
+<objects>
+{objs_text}
+</objects>
+
+<conflicts>
+{confs_text}
+</conflicts>
+
+<goals>
+{goals_text}
+</goals>
+</story_context>
+
+Generate 3 creative ways the writer can fix or work around this issue.
 <|assistant|>
 """
 
@@ -248,20 +439,27 @@ def build_export_prompt(beats: list[StoryBeat]) -> str:
     )
 
     return f"""<|system|>
-You are a professional story editor writing a structured story outline. For each chapter provided, write a single polished paragraph (3–5 sentences) that summarises what happens, reads like a real chapter summary, and could appear in a published story bible.
+You are a professional publishing story editor. Your task is to write a polished, structured chapter summary for each chapter provided. 
+Each summary should be a single compelling paragraph (3-5 sentences) that reads like a professional story bible outline.
 
-You must respond with a JSON array (and nothing else). Each element must have exactly these keys:
-- "beat_id": the exact beat id string provided in brackets
-- "summary": the polished chapter summary paragraph
-
-Return only the JSON array.
+OUTPUT FORMAT:
+Respond ONLY with a JSON array. Each element must have exactly these keys:
+[
+  {{
+    "beat_id": "the exact beat_id string provided in brackets",
+    "summary": "the polished chapter summary paragraph"
+  }}
+]
+Do not include any thoughts or extra text, only the JSON array.
 <|user|>
+<chapters_to_summarize>
 {chr(10).join(
     f'[beat_id: {b.id}] Chapter {b.timelineOrder}: "{b.title}" — {b.summary or "No summary."}'
     for b in sorted(beats, key=lambda x: x.timelineOrder)
 )}
+</chapters_to_summarize>
 
-Write a polished chapter summary for every chapter above.
+Write a polished chapter summary for every chapter listed above.
 <|assistant|>
 """
 
@@ -349,7 +547,7 @@ async def analyze_story(request: AnalyzeRequest):
         return AnalyzeResponse(insights=[], summary="No story beats to analyse yet.")
 
     # Build prompt and call Granite
-    prompt = build_analysis_prompt(request.beats, request.characters, request.world_rules)
+    prompt = build_analysis_prompt(request.beats, request.characters, request.world_rules, request.locations, request.objects, request.events, request.relationships, request.conflicts, request.goals, request.secrets, request.threads)
 
     print("\n" + "="*60)
     print("GRANITE PROMPT [analyze]")
@@ -445,6 +643,14 @@ async def brainstorm(request: BrainstormRequest):
         request.beats,
         request.characters,
         request.world_rules,
+        request.locations,
+        request.objects,
+        request.events,
+        request.relationships,
+        request.conflicts,
+        request.goals,
+        request.secrets,
+        request.threads,
     )
 
     print("\n" + "="*60)
@@ -539,12 +745,23 @@ async def export_summaries(request: ExportRequest):
     return ExportResponse(chapters=chapters, outline="\n".join(outline_lines))
 # ── Export ──────────────────────────────────────────────────────────────────
 
-def story_graph_to_markdown(beats: list[StoryBeat], characters: list[Character], world_rules: list[WorldRule]) -> str:
+def story_graph_to_markdown(
+    beats: list[StoryBeat], 
+    characters: list[Character], 
+    world_rules: list[WorldRule],
+    locations: list[Location] = None,
+    objects: list[ObjectNode] = None,
+    events: list[Event] = None,
+    relationships: list[Relationship] = None,
+    conflicts: list[Conflict] = None,
+    goals: list[Goal] = None,
+    secrets: list[Secret] = None,
+    threads: list[Thread] = None,
+) -> str:
     """Convert story graph to markdown outline"""
     
     md = "# Story Outline\n\n"
     
-    # Story Beats (sorted by timeline)
     md += "## Story Beats\n\n"
     for beat in sorted(beats, key=lambda x: x.timelineOrder):
         md += f"### Beat {beat.timelineOrder}: {beat.title}\n"
@@ -553,25 +770,76 @@ def story_graph_to_markdown(beats: list[StoryBeat], characters: list[Character],
             md += f"**Characters:** {', '.join(beat.characterNames)}\n"
         md += f"\n{beat.summary}\n\n"
     
-    # Characters
     if characters:
         md += "## Characters\n\n"
         for char in characters:
             md += f"### {char.name}\n{char.description}\n\n"
     
-    # World Rules
     if world_rules:
         md += "## World Rules\n\n"
         for rule in world_rules:
             md += f"### {rule.title}\n{rule.description}\n\n"
+            
+    if locations:
+        md += "## Locations\n\n"
+        for loc in locations:
+            md += f"### {loc.name}\n{loc.description}\n\n"
+            
+    if objects:
+        md += "## Objects\n\n"
+        for obj in objects:
+            md += f"### {obj.name}\n{obj.properties}\n\n"
+            
+    if events:
+        md += "## Events\n\n"
+        for ev in events:
+            md += f"### Timeline {ev.timeline_position}\n{ev.description}\n\n"
+            
+    if conflicts:
+        md += "## Conflicts\n\n"
+        for conf in conflicts:
+            md += f"### {conf.stakes}\nStatus: {conf.resolution_status}\n\n"
+            
+    if goals:
+        md += "## Goals\n\n"
+        for goal in goals:
+            md += f"### {goal.status}\nObstacles: {goal.obstacles}\n\n"
+            
+    if secrets:
+        md += "## Secrets\n\n"
+        for sec in secrets:
+            md += f"### {sec.reveal_status}\n{sec.content}\n\n"
+            
+    if threads:
+        md += "## Threads\n\n"
+        for thread in threads:
+            md += f"### {thread.resolution_status}\n{thread.description}\n\n"
     
     return md
 
 
+class ExportMarkdownRequest(BaseModel):
+    beats: list[StoryBeat] = []
+    characters: list[Character] = []
+    world_rules: list[WorldRule] = []
+    locations: list[Location] = []
+    objects: list[ObjectNode] = []
+    events: list[Event] = []
+    relationships: list[Relationship] = []
+    conflicts: list[Conflict] = []
+    goals: list[Goal] = []
+    secrets: list[Secret] = []
+    threads: list[Thread] = []
+
 @app.post("/api/stories/export")
-async def export_story(beats: list[StoryBeat], characters: list[Character], world_rules: list[WorldRule]):
+async def export_story(request: ExportMarkdownRequest):
     """Export story graph as markdown outline"""
-    markdown = story_graph_to_markdown(beats, characters, world_rules)
+    markdown = story_graph_to_markdown(
+        request.beats, request.characters, request.world_rules,
+        request.locations, request.objects, request.events,
+        request.relationships, request.conflicts, request.goals,
+        request.secrets, request.threads
+    )
     
     return {
         "status": "success",

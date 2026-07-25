@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useReactFlow, Panel } from '@xyflow/react';
-import { BookOpen, User, Shield, ChevronRight, PanelLeftOpen, PanelLeftClose, Hash, MapPin, Code, Copy, Check, Layers, Plus } from 'lucide-react';
+import { BookOpen, User, Shield, ChevronRight, PanelLeftOpen, PanelLeftClose, Hash, MapPin, Code, Copy, Check, Layers, Plus, Box, Zap, Swords, Target, Lock, GitMerge } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
@@ -15,7 +15,7 @@ import {
   DialogTitle,
 } from '#/features/shadcn/components/ui/dialog';
 import { useCanvasStore } from '#/features/canvas/store/useCanvasStore';
-import type { StoryBeatNodeData, CharacterNodeData, WorldRuleNodeData, StoryNodeType } from '#/features/canvas/types/canvas.types';
+import type { StoryBeatNodeData, StoryNodeType } from '#/features/canvas/types/canvas.types';
 import { AddNodeDialog } from './AddNodeDialog';
 
 /**
@@ -94,8 +94,15 @@ function NodesSidebarContent({ onItemClick }: { onItemClick: (id: string) => voi
   const storyBeats = nodes.filter((n) => n.type === 'storyBeat');
   const characters = nodes.filter((n) => n.type === 'character');
   const worldRules = nodes.filter((n) => n.type === 'worldRule');
+  const locations = nodes.filter((n) => n.type === 'location');
+  const objects = nodes.filter((n) => n.type === 'object');
+  const events = nodes.filter((n) => n.type === 'event');
+  const conflicts = nodes.filter((n) => n.type === 'conflict');
+  const goals = nodes.filter((n) => n.type === 'goal');
+  const secrets = nodes.filter((n) => n.type === 'secret');
+  const threads = nodes.filter((n) => n.type === 'thread');
 
-  const sections: NodeSection<StoryBeatNodeData | CharacterNodeData | WorldRuleNodeData>[] = [
+  const sections: NodeSection<any>[] = [
     {
       label: 'Story Beats',
       icon: <BookOpen className="w-4 h-4" />,
@@ -103,9 +110,9 @@ function NodesSidebarContent({ onItemClick }: { onItemClick: (id: string) => voi
       badgeClass: 'bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300',
       bgClass: 'bg-violet-50 dark:bg-violet-900/20',
       borderClass: 'border-violet-200 dark:border-violet-800',
-      nodes: storyBeats as { id: string; data: StoryBeatNodeData }[],
-      renderTitle: (d) => (d as StoryBeatNodeData).title,
-      renderSub: (d) => (d as StoryBeatNodeData).location || undefined,
+      nodes: storyBeats,
+      renderTitle: (d) => d.title,
+      renderSub: (d) => d.location || undefined,
     },
     {
       label: 'Characters',
@@ -114,9 +121,9 @@ function NodesSidebarContent({ onItemClick }: { onItemClick: (id: string) => voi
       badgeClass: 'bg-fuchsia-100 dark:bg-fuchsia-900/40 text-fuchsia-700 dark:text-fuchsia-300',
       bgClass: 'bg-fuchsia-50 dark:bg-fuchsia-900/20',
       borderClass: 'border-fuchsia-200 dark:border-fuchsia-800',
-      nodes: characters as { id: string; data: CharacterNodeData }[],
-      renderTitle: (d) => (d as CharacterNodeData).name,
-      renderSub: (d) => (d as CharacterNodeData).role || undefined,
+      nodes: characters,
+      renderTitle: (d) => d.name,
+      renderSub: (d) => d.role || undefined,
     },
     {
       label: 'World Rules',
@@ -125,8 +132,78 @@ function NodesSidebarContent({ onItemClick }: { onItemClick: (id: string) => voi
       badgeClass: 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300',
       bgClass: 'bg-indigo-50 dark:bg-indigo-900/20',
       borderClass: 'border-indigo-200 dark:border-indigo-800',
-      nodes: worldRules as { id: string; data: WorldRuleNodeData }[],
-      renderTitle: (d) => (d as WorldRuleNodeData).title,
+      nodes: worldRules,
+      renderTitle: (d) => d.title,
+    },
+    {
+      label: 'Locations',
+      icon: <MapPin className="w-4 h-4" />,
+      accentClass: 'text-teal-600 dark:text-teal-400',
+      badgeClass: 'bg-teal-100 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300',
+      bgClass: 'bg-teal-50 dark:bg-teal-900/20',
+      borderClass: 'border-teal-200 dark:border-teal-800',
+      nodes: locations,
+      renderTitle: (d) => d.name,
+    },
+    {
+      label: 'Objects',
+      icon: <Box className="w-4 h-4" />,
+      accentClass: 'text-amber-600 dark:text-amber-400',
+      badgeClass: 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300',
+      bgClass: 'bg-amber-50 dark:bg-amber-900/20',
+      borderClass: 'border-amber-200 dark:border-amber-800',
+      nodes: objects,
+      renderTitle: (d) => d.name,
+    },
+    {
+      label: 'Events',
+      icon: <Zap className="w-4 h-4" />,
+      accentClass: 'text-orange-600 dark:text-orange-400',
+      badgeClass: 'bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300',
+      bgClass: 'bg-orange-50 dark:bg-orange-900/20',
+      borderClass: 'border-orange-200 dark:border-orange-800',
+      nodes: events,
+      renderTitle: (d) => d.description,
+    },
+    {
+      label: 'Conflicts',
+      icon: <Swords className="w-4 h-4" />,
+      accentClass: 'text-red-600 dark:text-red-400',
+      badgeClass: 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300',
+      bgClass: 'bg-red-50 dark:bg-red-900/20',
+      borderClass: 'border-red-200 dark:border-red-800',
+      nodes: conflicts,
+      renderTitle: (d) => d.stakes,
+    },
+    {
+      label: 'Goals',
+      icon: <Target className="w-4 h-4" />,
+      accentClass: 'text-emerald-600 dark:text-emerald-400',
+      badgeClass: 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300',
+      bgClass: 'bg-emerald-50 dark:bg-emerald-900/20',
+      borderClass: 'border-emerald-200 dark:border-emerald-800',
+      nodes: goals,
+      renderTitle: (d) => d.status,
+    },
+    {
+      label: 'Secrets',
+      icon: <Lock className="w-4 h-4" />,
+      accentClass: 'text-slate-600 dark:text-slate-400',
+      badgeClass: 'bg-slate-100 dark:bg-slate-900/40 text-slate-700 dark:text-slate-300',
+      bgClass: 'bg-slate-50 dark:bg-slate-900/20',
+      borderClass: 'border-slate-200 dark:border-slate-800',
+      nodes: secrets,
+      renderTitle: (d) => d.content,
+    },
+    {
+      label: 'Threads',
+      icon: <GitMerge className="w-4 h-4" />,
+      accentClass: 'text-blue-600 dark:text-blue-400',
+      badgeClass: 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300',
+      bgClass: 'bg-blue-50 dark:bg-blue-900/20',
+      borderClass: 'border-blue-200 dark:border-blue-800',
+      nodes: threads,
+      renderTitle: (d) => d.description,
     },
   ];
 
@@ -157,13 +234,20 @@ function NodesSidebarContent({ onItemClick }: { onItemClick: (id: string) => voi
             </div>
           )}
           {sections.map((section) => {
-              const typeMap: Record<string, StoryNodeType> = {
-                'Story Beats': 'storyBeat',
-                'Characters': 'character',
-                'World Rules': 'worldRule',
-              };
-              
-              return (
+            const typeMap: Record<string, StoryNodeType> = {
+              'Story Beats': 'storyBeat',
+              'Characters': 'character',
+              'World Rules': 'worldRule',
+              'Locations': 'location',
+              'Objects': 'object',
+              'Events': 'event',
+              'Conflicts': 'conflict',
+              'Goals': 'goal',
+              'Secrets': 'secret',
+              'Threads': 'thread',
+            };
+
+            return (
               <div key={section.label}>
                 {/* Section header */}
                 <div className="flex items-center gap-2 mb-3 px-1">
@@ -179,13 +263,12 @@ function NodesSidebarContent({ onItemClick }: { onItemClick: (id: string) => voi
                       setAddNodeType(typeMap[section.label]);
                       setAddNodeOpen(true);
                     }}
-                    className={`p-1 rounded-md transition-colors cursor-pointer ${
-                      section.label === 'Story Beats'
-                        ? 'hover:bg-violet-100 dark:hover:bg-violet-900/40'
-                        : section.label === 'Characters'
+                    className={`p-1 rounded-md transition-colors cursor-pointer ${section.label === 'Story Beats'
+                      ? 'hover:bg-violet-100 dark:hover:bg-violet-900/40'
+                      : section.label === 'Characters'
                         ? 'hover:bg-fuchsia-100 dark:hover:bg-fuchsia-900/40'
                         : 'hover:bg-indigo-100 dark:hover:bg-indigo-900/40'
-                    }`}
+                      }`}
                     title={`Add ${section.label.slice(0, -1)}`}
                   >
                     <Plus className={`w-3.5 h-3.5 ${section.accentClass}`} />
@@ -244,8 +327,8 @@ function NodesSidebarContent({ onItemClick }: { onItemClick: (id: string) => voi
                   </ul>
                 )}
               </div>
-              );
-            })}
+            );
+          })}
         </div>
 
         {/* Export JSON footer */}

@@ -61,32 +61,209 @@ export type Database = {
       }
       characters: {
         Row: {
+          arc_stage: string | null
           created_at: string | null
           description: string | null
+          goals: string[] | null
           id: string
           name: string
+          secrets: string[] | null
           story_id: string | null
+          traits: string[] | null
           updated_at: string | null
+          voice_notes: string | null
         }
         Insert: {
+          arc_stage?: string | null
           created_at?: string | null
           description?: string | null
+          goals?: string[] | null
           id?: string
           name: string
+          secrets?: string[] | null
           story_id?: string | null
+          traits?: string[] | null
           updated_at?: string | null
+          voice_notes?: string | null
         }
         Update: {
+          arc_stage?: string | null
           created_at?: string | null
           description?: string | null
+          goals?: string[] | null
           id?: string
           name?: string
+          secrets?: string[] | null
           story_id?: string | null
+          traits?: string[] | null
           updated_at?: string | null
+          voice_notes?: string | null
         }
         Relationships: [
           {
             foreignKeyName: 'characters_story_id_fkey'
+            columns: ['story_id']
+            isOneToOne: false
+            referencedRelation: 'stories'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      conflicts: {
+        Row: {
+          created_at: string | null
+          id: string
+          parties: string[] | null
+          resolution_status: string | null
+          stakes: string | null
+          story_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          parties?: string[] | null
+          resolution_status?: string | null
+          stakes?: string | null
+          story_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          parties?: string[] | null
+          resolution_status?: string | null
+          stakes?: string | null
+          story_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'conflicts_story_id_fkey'
+            columns: ['story_id']
+            isOneToOne: false
+            referencedRelation: 'stories'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      events: {
+        Row: {
+          consequences: string | null
+          created_at: string | null
+          description: string
+          id: string
+          participants: string[] | null
+          story_id: string
+          timeline_position: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          consequences?: string | null
+          created_at?: string | null
+          description: string
+          id?: string
+          participants?: string[] | null
+          story_id: string
+          timeline_position?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          consequences?: string | null
+          created_at?: string | null
+          description?: string
+          id?: string
+          participants?: string[] | null
+          story_id?: string
+          timeline_position?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'events_story_id_fkey'
+            columns: ['story_id']
+            isOneToOne: false
+            referencedRelation: 'stories'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      goals: {
+        Row: {
+          created_at: string | null
+          id: string
+          obstacles: string | null
+          owning_character_id: string
+          status: string | null
+          story_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          obstacles?: string | null
+          owning_character_id: string
+          status?: string | null
+          story_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          obstacles?: string | null
+          owning_character_id?: string
+          status?: string | null
+          story_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'goals_owning_character_id_fkey'
+            columns: ['owning_character_id']
+            isOneToOne: false
+            referencedRelation: 'characters'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'goals_story_id_fkey'
+            columns: ['story_id']
+            isOneToOne: false
+            referencedRelation: 'stories'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      locations: {
+        Row: {
+          connected_locations: string[] | null
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          story_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          connected_locations?: string[] | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          story_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          connected_locations?: string[] | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          story_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'locations_story_id_fkey'
             columns: ['story_id']
             isOneToOne: false
             referencedRelation: 'stories'
@@ -124,6 +301,64 @@ export type Database = {
           },
         ]
       }
+      objects: {
+        Row: {
+          created_at: string | null
+          current_location: string | null
+          current_owner: string | null
+          id: string
+          name: string
+          properties: Json | null
+          significance: string | null
+          story_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          current_location?: string | null
+          current_owner?: string | null
+          id?: string
+          name: string
+          properties?: Json | null
+          significance?: string | null
+          story_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          current_location?: string | null
+          current_owner?: string | null
+          id?: string
+          name?: string
+          properties?: Json | null
+          significance?: string | null
+          story_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'objects_current_location_fkey'
+            columns: ['current_location']
+            isOneToOne: false
+            referencedRelation: 'locations'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'objects_current_owner_fkey'
+            columns: ['current_owner']
+            isOneToOne: false
+            referencedRelation: 'characters'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'objects_story_id_fkey'
+            columns: ['story_id']
+            isOneToOne: false
+            referencedRelation: 'stories'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string | null
@@ -141,6 +376,54 @@ export type Database = {
           username?: string | null
         }
         Relationships: []
+      }
+      secrets: {
+        Row: {
+          content: string
+          created_at: string | null
+          holder_id: string
+          id: string
+          known_by: string[] | null
+          reveal_status: string | null
+          story_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          holder_id: string
+          id?: string
+          known_by?: string[] | null
+          reveal_status?: string | null
+          story_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          holder_id?: string
+          id?: string
+          known_by?: string[] | null
+          reveal_status?: string | null
+          story_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'secrets_holder_id_fkey'
+            columns: ['holder_id']
+            isOneToOne: false
+            referencedRelation: 'characters'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'secrets_story_id_fkey'
+            columns: ['story_id']
+            isOneToOne: false
+            referencedRelation: 'stories'
+            referencedColumns: ['id']
+          },
+        ]
       }
       stories: {
         Row: {
@@ -180,27 +463,39 @@ export type Database = {
       story_edges: {
         Row: {
           created_at: string | null
+          history: string | null
           id: string
           label: string | null
           source_node_id: string | null
+          status: string | null
           story_id: string | null
           target_node_id: string | null
+          trust_level: number | null
+          type: string | null
         }
         Insert: {
           created_at?: string | null
+          history?: string | null
           id?: string
           label?: string | null
           source_node_id?: string | null
+          status?: string | null
           story_id?: string | null
           target_node_id?: string | null
+          trust_level?: number | null
+          type?: string | null
         }
         Update: {
           created_at?: string | null
+          history?: string | null
           id?: string
           label?: string | null
           source_node_id?: string | null
+          status?: string | null
           story_id?: string | null
           target_node_id?: string | null
+          trust_level?: number | null
+          type?: string | null
         }
         Relationships: [
           {
@@ -266,6 +561,51 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: 'story_nodes_story_id_fkey'
+            columns: ['story_id']
+            isOneToOne: false
+            referencedRelation: 'stories'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      threads: {
+        Row: {
+          created_at: string | null
+          description: string
+          id: string
+          last_referenced_event_id: string | null
+          resolution_status: string | null
+          story_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description: string
+          id?: string
+          last_referenced_event_id?: string | null
+          resolution_status?: string | null
+          story_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string
+          id?: string
+          last_referenced_event_id?: string | null
+          resolution_status?: string | null
+          story_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'threads_last_referenced_event_id_fkey'
+            columns: ['last_referenced_event_id']
+            isOneToOne: false
+            referencedRelation: 'events'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'threads_story_id_fkey'
             columns: ['story_id']
             isOneToOne: false
             referencedRelation: 'stories'

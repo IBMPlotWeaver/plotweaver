@@ -16,6 +16,13 @@ import { NodesSidebar } from '#/features/canvas/components/NodesSidebar';
 import { StoryBeatNode } from '#/features/canvas/components/nodes/StoryBeatNode';
 import { CharacterNode } from '#/features/canvas/components/nodes/CharacterNode';
 import { WorldRuleNode } from '#/features/canvas/components/nodes/WorldRuleNode';
+import { LocationNode } from '#/features/canvas/components/nodes/LocationNode';
+import { ObjectNode } from '#/features/canvas/components/nodes/ObjectNode';
+import { EventNode } from '#/features/canvas/components/nodes/EventNode';
+import { ConflictNode } from '#/features/canvas/components/nodes/ConflictNode';
+import { GoalNode } from '#/features/canvas/components/nodes/GoalNode';
+import { SecretNode } from '#/features/canvas/components/nodes/SecretNode';
+import { ThreadNode } from '#/features/canvas/components/nodes/ThreadNode';
 import { useUnsavedChangesWarning } from '#/features/canvas/hooks/useUnsavedChangesWarning';
 import { computeAutoLayout } from '#/features/canvas/utils/autoLayout';
 import { AIInsightsPanel } from '#/features/canvas/components/AIInsightsPanel';
@@ -33,6 +40,13 @@ const NODE_TYPES = {
   storyBeat: StoryBeatNode,
   character: CharacterNode,
   worldRule: WorldRuleNode,
+  location: LocationNode,
+  object: ObjectNode,
+  event: EventNode,
+  conflict: ConflictNode,
+  goal: GoalNode,
+  secret: SecretNode,
+  thread: ThreadNode,
 } as const;
 
 /**
