@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from '#/features/shadcn/components/ui/button';
 import { Input } from '#/features/shadcn/components/ui/input';
-import { BookOpen, User, Shield, X, Plus, Trash2, Sparkles, ArrowRight } from 'lucide-react';
+import { BookOpen, User, Shield, X, Plus, Trash2, Sparkles, ArrowRight, MapPin, Package, Clock, Swords, Target, EyeOff, Activity } from 'lucide-react';
 import { useNavigate } from '@tanstack/react-router';
 import { supabase } from '#/lib/supabase';
 
@@ -13,7 +13,7 @@ interface QuickCreateModalProps {
 
 interface QuickNode {
   id: string;
-  type: 'storyBeat' | 'character' | 'worldRule';
+  type: 'storyBeat' | 'character' | 'worldRule' | 'location' | 'object' | 'event' | 'conflict' | 'goal' | 'secret' | 'thread';
   title: string;
   description: string;
   location?: string;
@@ -23,7 +23,7 @@ interface QuickNode {
 export function QuickCreateModal({ isOpen, onClose, storyId }: QuickCreateModalProps) {
   const navigate = useNavigate();
   const [nodes, setNodes] = useState<QuickNode[]>([]);
-  const [activeTab, setActiveTab] = useState<'storyBeat' | 'character' | 'worldRule'>('storyBeat');
+  const [activeTab, setActiveTab] = useState<'storyBeat' | 'character' | 'worldRule' | 'location' | 'object' | 'event' | 'conflict' | 'goal' | 'secret' | 'thread'>('storyBeat');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
@@ -34,6 +34,13 @@ export function QuickCreateModal({ isOpen, onClose, storyId }: QuickCreateModalP
     { type: 'storyBeat' as const, label: 'Story Beats', icon: BookOpen, color: 'violet' },
     { type: 'character' as const, label: 'Characters', icon: User, color: 'fuchsia' },
     { type: 'worldRule' as const, label: 'World Rules', icon: Shield, color: 'indigo' },
+    { type: 'location' as const, label: 'Locations', icon: MapPin, color: 'emerald' },
+    { type: 'object' as const, label: 'Objects', icon: Package, color: 'amber' },
+    { type: 'event' as const, label: 'Events', icon: Clock, color: 'blue' },
+    { type: 'conflict' as const, label: 'Conflicts', icon: Swords, color: 'rose' },
+    { type: 'goal' as const, label: 'Goals', icon: Target, color: 'orange' },
+    { type: 'secret' as const, label: 'Secrets', icon: EyeOff, color: 'slate' },
+    { type: 'thread' as const, label: 'Threads', icon: Activity, color: 'cyan' },
   ];
 
   const handleAddNode = () => {
@@ -151,6 +158,57 @@ export function QuickCreateModal({ isOpen, onClose, storyId }: QuickCreateModalP
         if (rulesError) throw rulesError;
       }
 
+      const locations = nodes.filter((n) => n.type === 'location');
+      const objects = nodes.filter((n) => n.type === 'object');
+      const events = nodes.filter((n) => n.type === 'event');
+      const conflicts = nodes.filter((n) => n.type === 'conflict');
+      const goals = nodes.filter((n) => n.type === 'goal');
+      const secrets = nodes.filter((n) => n.type === 'secret');
+      const threads = nodes.filter((n) => n.type === 'thread');
+
+      if (locations.length > 0) {
+        const { error } = await supabase.from('locations').insert(
+          locations.map((n) => ({ id: n.id, story_id: storyId, name: n.title, description: n.description }))
+        );
+        if (error) throw error;
+      }
+      if (objects.length > 0) {
+        const { error } = await supabase.from('objects').insert(
+          objects.map((n) => ({ id: n.id, story_id: storyId, name: n.title, properties: n.description }))
+        );
+        if (error) throw error;
+      }
+      if (events.length > 0) {
+        const { error } = await supabase.from('events').insert(
+          events.map((n) => ({ id: n.id, story_id: storyId, description: n.title, consequences: n.description }))
+        );
+        if (error) throw error;
+      }
+      if (conflicts.length > 0) {
+        const { error } = await supabase.from('conflicts').insert(
+          conflicts.map((n) => ({ id: n.id, story_id: storyId, stakes: n.title, resolution_status: n.description }))
+        );
+        if (error) throw error;
+      }
+      if (goals.length > 0) {
+        const { error } = await supabase.from('goals').insert(
+          goals.map((n) => ({ id: n.id, story_id: storyId, status: n.title, obstacles: n.description }))
+        );
+        if (error) throw error;
+      }
+      if (secrets.length > 0) {
+        const { error } = await supabase.from('secrets').insert(
+          secrets.map((n) => ({ id: n.id, story_id: storyId, content: n.title, reveal_status: n.description }))
+        );
+        if (error) throw error;
+      }
+      if (threads.length > 0) {
+        const { error } = await supabase.from('threads').insert(
+          threads.map((n) => ({ id: n.id, story_id: storyId, description: n.title, resolution_status: n.description }))
+        );
+        if (error) throw error;
+      }
+
       // Navigate to canvas
       navigate({ to: '/canvas/$storyId', params: { storyId } });
       onClose();
@@ -235,7 +293,7 @@ export function QuickCreateModal({ isOpen, onClose, storyId }: QuickCreateModalP
                   ? 'Story beat title...'
                   : activeTab === 'character'
                   ? 'Character name...'
-                  : 'World rule title...'
+                  : 'Title or name...'
               }
               className="w-full"
               onKeyDown={(e) => {
@@ -253,19 +311,27 @@ export function QuickCreateModal({ isOpen, onClose, storyId }: QuickCreateModalP
                   ? 'What happens in this beat...'
                   : activeTab === 'character'
                   ? 'Character description...'
-                  : 'Rule description...'
+                  : 'Description or details...'
               }
               className="w-full px-3 py-2 text-sm rounded-lg border border-(--line) bg-transparent text-(--sea-ink) placeholder:text-(--sea-ink-soft) focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent resize-none"
               rows={4}
             />
             {activeTab === 'storyBeat' && (
               <>
-                <Input
+                <select
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
-                  placeholder="Location (optional)..."
-                  className="w-full"
-                />
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-(--line) bg-transparent text-(--sea-ink) focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                >
+                  <option value="">Location (optional)...</option>
+                  {nodes
+                    .filter((n) => n.type === 'location')
+                    .map((loc) => (
+                      <option key={loc.id} value={loc.title} className="bg-(--surface) text-(--sea-ink)">
+                        {loc.title}
+                      </option>
+                    ))}
+                </select>
                 {nodes.filter((n) => n.type === 'character').length > 0 && (
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-(--sea-ink)">Characters in this beat:</label>
