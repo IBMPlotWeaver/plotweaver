@@ -241,13 +241,24 @@ export function AddNodeDialog({ isOpen, onClose, nodeType }: AddNodeDialogProps)
                 <label htmlFor="location" className="block text-base font-medium text-(--sea-ink) mb-1.5">
                   Location (optional)
                 </label>
-                <Input
+                <select
                   id="location"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
-                  placeholder="Where does this take place..."
-                  className="w-full"
-                />
+                  className="w-full px-3 py-2 text-base rounded-lg border border-(--line) bg-transparent text-(--sea-ink) focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                >
+                  <option value="">Select a location...</option>
+                  {nodes
+                    .filter((n) => n.type === 'location')
+                    .map((loc) => {
+                      const locData = loc.data as import('#/features/canvas/types/canvas.types').LocationNodeData;
+                      return (
+                        <option key={loc.id} value={locData.name} className="bg-(--surface) text-(--sea-ink)">
+                          {locData.name}
+                        </option>
+                      );
+                    })}
+                </select>
               </div>
 
               {characterNodes.length > 0 && (
