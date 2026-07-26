@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from '#/features/shadcn/components/ui/button';
 import { Input } from '#/features/shadcn/components/ui/input';
-import { BookOpen, User, Shield, Plus } from 'lucide-react';
+import { BookOpen, User, Shield, Plus, MapPin, Box, Zap, Swords, Target, Lock, GitMerge } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -45,6 +45,69 @@ const nodeConfig = {
     titleLabel: 'Title',
     descLabel: 'Description',
   },
+  location: {
+    label: 'Location',
+    icon: MapPin,
+    color: 'teal',
+    titlePlaceholder: 'Location name...',
+    descPlaceholder: 'Description of the location...',
+    titleLabel: 'Name',
+    descLabel: 'Description',
+  },
+  object: {
+    label: 'Object',
+    icon: Box,
+    color: 'amber',
+    titlePlaceholder: 'Object name...',
+    descPlaceholder: 'Why is this important?...',
+    titleLabel: 'Name',
+    descLabel: 'Significance',
+  },
+  event: {
+    label: 'Event',
+    icon: Zap,
+    color: 'orange',
+    titlePlaceholder: 'Event description...',
+    descPlaceholder: 'Consequences...',
+    titleLabel: 'Description',
+    descLabel: 'Consequences',
+  },
+  conflict: {
+    label: 'Conflict',
+    icon: Swords,
+    color: 'red',
+    titlePlaceholder: 'Conflict stakes...',
+    descPlaceholder: 'Status (e.g. Unresolved)...',
+    titleLabel: 'Stakes',
+    descLabel: 'Status',
+  },
+  goal: {
+    label: 'Goal',
+    icon: Target,
+    color: 'emerald',
+    titlePlaceholder: 'Goal / Status...',
+    descPlaceholder: 'Obstacles...',
+    titleLabel: 'Status',
+    descLabel: 'Obstacles',
+  },
+  secret: {
+    label: 'Secret',
+    icon: Lock,
+    color: 'slate',
+    titlePlaceholder: 'Secret content...',
+    descPlaceholder: 'Reveal Status...',
+    titleLabel: 'Content',
+    descLabel: 'Reveal Status',
+  },
+  thread: {
+    label: 'Thread',
+    icon: GitMerge,
+    color: 'blue',
+    titlePlaceholder: 'Thread description...',
+    descPlaceholder: 'Status...',
+    titleLabel: 'Description',
+    descLabel: 'Status',
+  },
 };
 
 export function AddNodeDialog({ isOpen, onClose, nodeType }: AddNodeDialogProps) {
@@ -87,6 +150,27 @@ export function AddNodeDialog({ isOpen, onClose, nodeType }: AddNodeDialogProps)
       } else if (nodeType === 'worldRule') {
         updateData.title = title.trim();
         updateData.description = description.trim();
+      } else if (nodeType === 'location') {
+        updateData.name = title.trim();
+        updateData.description = description.trim();
+      } else if (nodeType === 'object') {
+        updateData.name = title.trim();
+        updateData.significance = description.trim();
+      } else if (nodeType === 'event') {
+        updateData.description = title.trim();
+        updateData.consequences = description.trim();
+      } else if (nodeType === 'conflict') {
+        updateData.stakes = title.trim();
+        updateData.resolutionStatus = description.trim();
+      } else if (nodeType === 'goal') {
+        updateData.status = title.trim();
+        updateData.obstacles = description.trim();
+      } else if (nodeType === 'secret') {
+        updateData.content = title.trim();
+        updateData.revealStatus = description.trim();
+      } else if (nodeType === 'thread') {
+        updateData.description = title.trim();
+        updateData.resolutionStatus = description.trim();
       }
 
       useCanvasStore.getState().updateNodeData(newNode.id, updateData);
@@ -157,13 +241,24 @@ export function AddNodeDialog({ isOpen, onClose, nodeType }: AddNodeDialogProps)
                 <label htmlFor="location" className="block text-base font-medium text-(--sea-ink) mb-1.5">
                   Location (optional)
                 </label>
-                <Input
+                <select
                   id="location"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
-                  placeholder="Where does this take place..."
-                  className="w-full"
-                />
+                  className="w-full px-3 py-2 text-base rounded-lg border border-(--line) bg-transparent text-(--sea-ink) focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                >
+                  <option value="">Select a location...</option>
+                  {nodes
+                    .filter((n) => n.type === 'location')
+                    .map((loc) => {
+                      const locData = loc.data as import('#/features/canvas/types/canvas.types').LocationNodeData;
+                      return (
+                        <option key={loc.id} value={locData.name} className="bg-(--surface) text-(--sea-ink)">
+                          {locData.name}
+                        </option>
+                      );
+                    })}
+                </select>
               </div>
 
               {characterNodes.length > 0 && (

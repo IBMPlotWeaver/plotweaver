@@ -129,12 +129,23 @@ export const StoryBeatNode = memo(({ id, data, selected }: NodeProps<Node<StoryB
           <div className="flex items-center gap-1.5 mt-auto pt-2 border-t border-(--line)">
             <MapPin className="w-3 h-3 text-(--sea-ink-soft) shrink-0" />
             {editing ? (
-              <input
+              <select
                 value={draft.location}
                 onChange={(e) => setDraft((d) => ({ ...d, location: e.target.value }))}
                 className="flex-1 text-sm bg-transparent outline-none border-b border-(--line) text-(--sea-ink-soft) min-w-0"
-                placeholder="Location"
-              />
+              >
+                <option value="">No location set</option>
+                {nodes
+                  .filter((n) => n.type === 'location')
+                  .map((loc) => {
+                    const locData = loc.data as import('#/features/canvas/types/canvas.types').LocationNodeData;
+                    return (
+                      <option key={loc.id} value={locData.name} className="bg-(--surface) text-(--sea-ink)">
+                        {locData.name}
+                      </option>
+                    );
+                  })}
+              </select>
             ) : (
               <span className="text-sm text-(--sea-ink-soft) truncate">
                 {data.location || 'No location set'}

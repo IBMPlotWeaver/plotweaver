@@ -68,34 +68,38 @@ export function computeAutoLayout(nodes: StoryNode[], edges: StoryEdge[]): Story
       ? Math.max(...laidOutBeats.map((n) => n.position.y + (n.measured?.height ?? DEFAULT_NODE_HEIGHT)))
       : 0;
 
-  const secondRowY = beatBottom + RANK_SEPARATION;
-  const charWidth = DEFAULT_NODE_WIDTH;
-  const charHeight = DEFAULT_NODE_HEIGHT;
+  const otherNodes = nodes.filter((n) => n.type !== 'storyBeat');
+  
+  // Group other nodes by type dynamically to have consistent rows for each type
+  const typesSet = new Set(otherNodes.map(n => n.type));
+  // Sort types: character first, worldRule second, then alphabetical
+  const sortedTypes = Array.from(typesSet).sort((a, b) => {
+    if (a === 'character') return -1;
+    if (b === 'character') return 1;
+    if (a === 'worldRule') return -1;
+    if (b === 'worldRule') return 1;
+    return (a || '').localeCompare(b || '');
+  });
 
-  // --- Layout characters in a horizontal row below beats ---
-  const laidOutChars: StoryNode[] = characterNodes.map((node, i) => ({
-    ...node,
-    position: {
-      x: i * (charWidth + NODE_SEPARATION) + 40,
-      y: secondRowY,
-    },
-  }));
+  const laidOutOthers: StoryNode[] = [];
+  let currentRowY = beatBottom + RANK_SEPARATION;
+  const nodeWidth = DEFAULT_NODE_WIDTH;
+  const nodeHeight = DEFAULT_NODE_HEIGHT;
 
-  // --- Layout world rules in another horizontal row below characters ---
-  const rulesRowY =
-    characterNodes.length > 0
-      ? secondRowY + charHeight + RANK_SEPARATION
-      : secondRowY;
+  for (const type of sortedTypes) {
+    const typeNodes = otherNodes.filter(n => n.type === type);
+    if (typeNodes.length > 0) {
+      const positioned = typeNodes.map((node, i) => ({
+        ...node,
+        position: {
+          x: i * (nodeWidth + NODE_SEPARATION) + 40,
+          y: currentRowY,
+        },
+      }));
+      laidOutOthers.push(...positioned);
+      currentRowY += nodeHeight + RANK_SEPARATION;
+    }
+  }
 
-  const ruleWidth = DEFAULT_NODE_WIDTH;
-
-  const laidOutRules: StoryNode[] = worldRuleNodes.map((node, i) => ({
-    ...node,
-    position: {
-      x: i * (ruleWidth + NODE_SEPARATION) + 40,
-      y: rulesRowY,
-    },
-  }));
-
-  return [...laidOutBeats, ...laidOutChars, ...laidOutRules];
+  return [...laidOutBeats, ...laidOutOthers];
 }

@@ -10,6 +10,13 @@ import type {
   StoryBeatNodeData,
   CharacterNodeData,
   WorldRuleNodeData,
+  LocationNodeData,
+  ObjectNodeData,
+  EventNodeData,
+  ConflictNodeData,
+  GoalNodeData,
+  SecretNodeData,
+  ThreadNodeData,
 } from '#/features/canvas/types/canvas.types'
 import { supabase } from '#/lib/supabase'
 
@@ -37,6 +44,37 @@ const DEFAULT_NODE_DATA: Record<StoryNodeType, StoryNodeData> = {
     title: 'New World Rule',
     description: 'Describe the constraint or rule...',
   } as WorldRuleNodeData,
+  location: {
+    type: 'location',
+    name: 'New Location',
+    description: 'Describe the location...',
+  } as LocationNodeData,
+  object: {
+    type: 'object',
+    name: 'New Object',
+    properties: 'Describe the object properties...',
+  } as ObjectNodeData,
+  event: {
+    type: 'event',
+    description: 'Describe the event...',
+    timelinePosition: 0,
+  } as EventNodeData,
+  conflict: {
+    type: 'conflict',
+    stakes: 'Describe the stakes...',
+  } as ConflictNodeData,
+  goal: {
+    type: 'goal',
+    status: 'Describe the goal status...',
+  } as GoalNodeData,
+  secret: {
+    type: 'secret',
+    content: 'Describe the secret...',
+  } as SecretNodeData,
+  thread: {
+    type: 'thread',
+    description: 'Describe the thread...',
+  } as ThreadNodeData,
 }
 
 /** Zustand store managing nodes, edges, and selection state for the story canvas. */
@@ -52,6 +90,8 @@ export const useCanvasStore = create<
   selectedNodeId: null,
   storyId: null,
   hasUnsavedChanges: false,
+  lastEditedNodeId: null,
+  lastEditedTimestamp: null,
 
   onNodesChange: (changes) => {
     const isDirty = changes.some(
@@ -111,14 +151,14 @@ export const useCanvasStore = create<
   },
 
   updateNodeData: (id, data) =>
-    set({
-      nodes: get().nodes.map((n) =>
-        n.id === id
-          ? { ...n, data: { ...n.data, ...data } as StoryNodeData }
-          : n,
+    set((state) => ({
+      nodes: state.nodes.map((n) =>
+        n.id === id ? { ...n, data: { ...n.data, ...data } as StoryNodeData } : n,
       ),
       hasUnsavedChanges: true,
-    }),
+      lastEditedNodeId: id,
+      lastEditedTimestamp: Date.now(),
+    })),
 
   deleteNode: (id) =>
     set({
@@ -174,6 +214,28 @@ export const useCanvasStore = create<
         .eq('story_id', storyId)
 
       if (rulesError) throw rulesError
+
+      // Fetch new phase 1 node types
+      const { data: locations, error: locationsError } = await supabase.from('locations').select('*').eq('story_id', storyId)
+      if (locationsError) throw locationsError
+
+      const { data: objects, error: objectsError } = await supabase.from('objects').select('*').eq('story_id', storyId)
+      if (objectsError) throw objectsError
+
+      const { data: events, error: eventsError } = await supabase.from('events').select('*').eq('story_id', storyId)
+      if (eventsError) throw eventsError
+
+      const { data: conflicts, error: conflictsError } = await supabase.from('conflicts').select('*').eq('story_id', storyId)
+      if (conflictsError) throw conflictsError
+
+      const { data: goals, error: goalsError } = await supabase.from('goals').select('*').eq('story_id', storyId)
+      if (goalsError) throw goalsError
+
+      const { data: secrets, error: secretsError } = await supabase.from('secrets').select('*').eq('story_id', storyId)
+      if (secretsError) throw secretsError
+
+      const { data: threads, error: threadsError } = await supabase.from('threads').select('*').eq('story_id', storyId)
+      if (threadsError) throw threadsError
 
       // Fetch edges
       const { data: edges, error: edgesError } = await supabase
@@ -255,6 +317,34 @@ export const useCanvasStore = create<
             description: rule.description,
           } as WorldRuleNodeData,
         })) || []),
+        ...(locations?.map((loc) => ({
+          id: loc.id, type: 'location' as const, position: { x: 100, y: 100 },
+          data: { type: 'location', name: loc.name, description: loc.description, connectedLocations: loc.connected_locations || [] } as any,
+        })) || []),
+        ...(objects?.map((obj) => ({
+          id: obj.id, type: 'object' as const, position: { x: 100, y: 100 },
+          data: { type: 'object', name: obj.name, properties: obj.properties, currentOwner: obj.current_owner, currentLocation: obj.current_location, significance: obj.significance } as any,
+        })) || []),
+        ...(events?.map((ev) => ({
+          id: ev.id, type: 'event' as const, position: { x: 100, y: 100 },
+          data: { type: 'event', description: ev.description, timelinePosition: ev.timeline_position, participants: ev.participants || [], consequences: ev.consequences } as any,
+        })) || []),
+        ...(conflicts?.map((con) => ({
+          id: con.id, type: 'conflict' as const, position: { x: 100, y: 100 },
+          data: { type: 'conflict', parties: con.parties || [], stakes: con.stakes, resolutionStatus: con.resolution_status } as any,
+        })) || []),
+        ...(goals?.map((g) => ({
+          id: g.id, type: 'goal' as const, position: { x: 100, y: 100 },
+          data: { type: 'goal', owningCharacterId: g.owning_character_id, status: g.status, obstacles: g.obstacles } as any,
+        })) || []),
+        ...(secrets?.map((s) => ({
+          id: s.id, type: 'secret' as const, position: { x: 100, y: 100 },
+          data: { type: 'secret', holderId: s.holder_id, content: s.content, knownBy: s.known_by || [], revealStatus: s.reveal_status } as any,
+        })) || []),
+        ...(threads?.map((th) => ({
+          id: th.id, type: 'thread' as const, position: { x: 100, y: 100 },
+          data: { type: 'thread', description: th.description, resolutionStatus: th.resolution_status, lastReferencedEventId: th.last_referenced_event_id } as any,
+        })) || []),
       ]
 
       // We no longer convert node_characters into visual edges.
@@ -292,59 +382,35 @@ export const useCanvasStore = create<
       const storyBeatNodes = nodes.filter((n) => n.type === 'storyBeat')
       const characterNodes = nodes.filter((n) => n.type === 'character')
       const worldRuleNodes = nodes.filter((n) => n.type === 'worldRule')
+      const locationNodes = nodes.filter((n) => n.type === 'location')
+      const objectNodes = nodes.filter((n) => n.type === 'object')
+      const eventNodes = nodes.filter((n) => n.type === 'event')
+      const conflictNodes = nodes.filter((n) => n.type === 'conflict')
+      const goalNodes = nodes.filter((n) => n.type === 'goal')
+      const secretNodes = nodes.filter((n) => n.type === 'secret')
+      const threadNodes = nodes.filter((n) => n.type === 'thread')
 
-      // Get current node IDs
-      const currentStoryBeatIds = storyBeatNodes.map((n) => n.id)
-      const currentCharacterIds = characterNodes.map((n) => n.id)
-      const currentWorldRuleIds = worldRuleNodes.map((n) => n.id)
-
-      // Safely delete story_nodes no longer in the canvas
-      if (currentStoryBeatIds.length > 0) {
-        const { error: deleteBeatsError } = await supabase
-          .from('story_nodes')
-          .delete()
-          .eq('story_id', storyId)
-          .filter('id', 'not.in', `(${currentStoryBeatIds.join(',')})`)
-        if (deleteBeatsError) throw deleteBeatsError
-      } else {
-        const { error: deleteBeatsError } = await supabase
-          .from('story_nodes')
-          .delete()
-          .eq('story_id', storyId)
-        if (deleteBeatsError) throw deleteBeatsError
+      const deleteMissingNodes = async (table: string, currentNodes: any[]) => {
+        const currentIds = currentNodes.map(n => n.id);
+        if (currentIds.length > 0) {
+          const { error } = await supabase.from(table).delete().eq('story_id', storyId).filter('id', 'not.in', `(${currentIds.join(',')})`)
+          if (error) throw error
+        } else {
+          const { error } = await supabase.from(table).delete().eq('story_id', storyId)
+          if (error) throw error
+        }
       }
 
-      // Safely delete characters no longer in the canvas
-      if (currentCharacterIds.length > 0) {
-        const { error: deleteCharsError } = await supabase
-          .from('characters')
-          .delete()
-          .eq('story_id', storyId)
-          .filter('id', 'not.in', `(${currentCharacterIds.join(',')})`)
-        if (deleteCharsError) throw deleteCharsError
-      } else {
-        const { error: deleteCharsError } = await supabase
-          .from('characters')
-          .delete()
-          .eq('story_id', storyId)
-        if (deleteCharsError) throw deleteCharsError
-      }
-
-      // Safely delete world_rules no longer in the canvas
-      if (currentWorldRuleIds.length > 0) {
-        const { error: deleteRulesError } = await supabase
-          .from('world_rules')
-          .delete()
-          .eq('story_id', storyId)
-          .filter('id', 'not.in', `(${currentWorldRuleIds.join(',')})`)
-        if (deleteRulesError) throw deleteRulesError
-      } else {
-        const { error: deleteRulesError } = await supabase
-          .from('world_rules')
-          .delete()
-          .eq('story_id', storyId)
-        if (deleteRulesError) throw deleteRulesError
-      }
+      await deleteMissingNodes('story_nodes', storyBeatNodes)
+      await deleteMissingNodes('characters', characterNodes)
+      await deleteMissingNodes('world_rules', worldRuleNodes)
+      await deleteMissingNodes('locations', locationNodes)
+      await deleteMissingNodes('objects', objectNodes)
+      await deleteMissingNodes('events', eventNodes)
+      await deleteMissingNodes('conflicts', conflictNodes)
+      await deleteMissingNodes('goals', goalNodes)
+      await deleteMissingNodes('secrets', secretNodes)
+      await deleteMissingNodes('threads', threadNodes)
 
       // Upsert story_nodes
       if (storyBeatNodes.length > 0) {
@@ -396,6 +462,70 @@ export const useCanvasStore = create<
           }),
         )
         if (rulesError) throw rulesError
+      }
+
+      if (locationNodes.length > 0) {
+        const { error } = await supabase.from('locations').upsert(
+          locationNodes.map((node) => {
+            const data = node.data as any;
+            return { id: node.id, story_id: storyId, name: data.name, description: data.description, connected_locations: data.connectedLocations };
+          })
+        )
+        if (error) throw error;
+      }
+      if (objectNodes.length > 0) {
+        const { error } = await supabase.from('objects').upsert(
+          objectNodes.map((node) => {
+            const data = node.data as any;
+            return { id: node.id, story_id: storyId, name: data.name, properties: data.properties, current_owner: data.currentOwner, current_location: data.currentLocation, significance: data.significance };
+          })
+        )
+        if (error) throw error;
+      }
+      if (eventNodes.length > 0) {
+        const { error } = await supabase.from('events').upsert(
+          eventNodes.map((node) => {
+            const data = node.data as any;
+            return { id: node.id, story_id: storyId, description: data.description, timeline_position: data.timelinePosition, participants: data.participants, consequences: data.consequences };
+          })
+        )
+        if (error) throw error;
+      }
+      if (conflictNodes.length > 0) {
+        const { error } = await supabase.from('conflicts').upsert(
+          conflictNodes.map((node) => {
+            const data = node.data as any;
+            return { id: node.id, story_id: storyId, stakes: data.stakes, parties: data.parties, resolution_status: data.resolutionStatus };
+          })
+        )
+        if (error) throw error;
+      }
+      if (goalNodes.length > 0) {
+        const { error } = await supabase.from('goals').upsert(
+          goalNodes.map((node) => {
+            const data = node.data as any;
+            return { id: node.id, story_id: storyId, owning_character_id: data.owningCharacterId, status: data.status, obstacles: data.obstacles };
+          })
+        )
+        if (error) throw error;
+      }
+      if (secretNodes.length > 0) {
+        const { error } = await supabase.from('secrets').upsert(
+          secretNodes.map((node) => {
+            const data = node.data as any;
+            return { id: node.id, story_id: storyId, holder_id: data.holderId, content: data.content, known_by: data.knownBy, reveal_status: data.revealStatus };
+          })
+        )
+        if (error) throw error;
+      }
+      if (threadNodes.length > 0) {
+        const { error } = await supabase.from('threads').upsert(
+          threadNodes.map((node) => {
+            const data = node.data as any;
+            return { id: node.id, story_id: storyId, description: data.description, resolution_status: data.resolutionStatus, last_referenced_event_id: data.lastReferencedEventId };
+          })
+        )
+        if (error) throw error;
       }
 
       // Sync edges (beat-to-beat)

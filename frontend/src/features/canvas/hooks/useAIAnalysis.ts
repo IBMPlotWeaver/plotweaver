@@ -60,9 +60,9 @@ export function useAIInsights(storyId: string | null) {
 export function useRunAnalysis() {
   const queryClient = useQueryClient()
 
-  return useMutation<AnalyzeResponse, Error, string>({
-    mutationFn: async (storyId: string) => {
-      const { nodes, storyId: canvasStoryId } = useCanvasStore.getState()
+  return useMutation<AnalyzeResponse, Error, { storyId: string; editedNodeId?: string }>({
+    mutationFn: async ({ storyId, editedNodeId }) => {
+      const { nodes, edges, storyId: canvasStoryId } = useCanvasStore.getState()
 
       const sid = storyId || canvasStoryId
       if (!sid) throw new Error('No story ID available.')
@@ -95,10 +95,39 @@ export function useRunAnalysis() {
           return { id: n.id, title: d.title, description: d.description }
         })
 
+      // Add remaining types
+      const locations = nodes.filter((n) => n.type === 'location').map((n) => n.data)
+      const objects = nodes.filter((n) => n.type === 'object').map((n) => n.data)
+      const events = nodes.filter((n) => n.type === 'event').map((n) => n.data)
+      const conflicts = nodes.filter((n) => n.type === 'conflict').map((n) => n.data)
+      const goals = nodes.filter((n) => n.type === 'goal').map((n) => n.data)
+      const secrets = nodes.filter((n) => n.type === 'secret').map((n) => n.data)
+      const threads = nodes.filter((n) => n.type === 'thread').map((n) => n.data)
+
+      const formattedEdges = edges.map((e) => ({
+        id: e.id,
+        source: e.source,
+        target: e.target,
+      }))
+
       const res = await fetch(`${BACKEND_URL}/api/analyze`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ story_id: sid, beats, characters, world_rules }),
+        body: JSON.stringify({ 
+          story_id: sid, 
+          edited_node_id: editedNodeId || null,
+          edges: formattedEdges,
+          beats, 
+          characters, 
+          world_rules,
+          locations,
+          objects,
+          events,
+          conflicts,
+          goals,
+          secrets,
+          threads
+        }),
       })
 
       if (!res.ok) {
@@ -109,7 +138,7 @@ export function useRunAnalysis() {
       return res.json() as Promise<AnalyzeResponse>
     },
 
-    onSuccess: (data, storyId) => {
+    onSuccess: (data, { storyId }) => {
       // Refresh the insights query cache
       queryClient.invalidateQueries({ queryKey: ['ai-insights', storyId] })
 

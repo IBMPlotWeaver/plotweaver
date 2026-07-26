@@ -21,7 +21,7 @@ export interface ExportResponse {
 export function useExportSummaries() {
   return useMutation<ExportResponse, Error, void>({
     mutationFn: async () => {
-      const { nodes, storyId } = useCanvasStore.getState()
+      const { nodes, edges, storyId } = useCanvasStore.getState()
 
       if (!storyId) throw new Error('No story ID available.')
 
@@ -41,10 +41,43 @@ export function useExportSummaries() {
 
       if (beats.length === 0) throw new Error('Add some story beats before exporting.')
 
+      const characters = nodes.filter((n) => n.type === 'character').map((n) => ({ id: n.id, ...n.data }))
+      const world_rules = nodes.filter((n) => n.type === 'worldRule').map((n) => ({ id: n.id, ...n.data }))
+      const locations = nodes.filter((n) => n.type === 'location').map((n) => ({ id: n.id, ...n.data }))
+      const objects = nodes.filter((n) => n.type === 'object').map((n) => ({ id: n.id, ...n.data }))
+      const events = nodes.filter((n) => n.type === 'event').map((n) => ({ id: n.id, ...n.data }))
+      const conflicts = nodes.filter((n) => n.type === 'conflict').map((n) => ({ id: n.id, ...n.data }))
+      const goals = nodes.filter((n) => n.type === 'goal').map((n) => ({ id: n.id, ...n.data }))
+      const secrets = nodes.filter((n) => n.type === 'secret').map((n) => ({ id: n.id, ...n.data }))
+      const threads = nodes.filter((n) => n.type === 'thread').map((n) => ({ id: n.id, ...n.data }))
+      const relationships = edges
+        .filter((e) => e.data?.type === 'relationship')
+        .map((e) => ({
+          id: e.id,
+          source_character_id: e.source,
+          target_character_id: e.target,
+          ...e.data,
+        }))
+
+      const payload = {
+        story_id: storyId,
+        beats,
+        characters,
+        world_rules,
+        locations,
+        objects,
+        events,
+        conflicts,
+        goals,
+        secrets,
+        threads,
+        relationships,
+      }
+
       const res = await fetch(`${BACKEND_URL}/api/export/summaries`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ story_id: storyId, beats }),
+        body: JSON.stringify(payload),
       })
 
       if (!res.ok) {

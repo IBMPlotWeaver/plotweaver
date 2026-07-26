@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import {
   ReactFlow,
   Background,
@@ -16,6 +16,13 @@ import { NodesSidebar } from '#/features/canvas/components/NodesSidebar';
 import { StoryBeatNode } from '#/features/canvas/components/nodes/StoryBeatNode';
 import { CharacterNode } from '#/features/canvas/components/nodes/CharacterNode';
 import { WorldRuleNode } from '#/features/canvas/components/nodes/WorldRuleNode';
+import { LocationNode } from '#/features/canvas/components/nodes/LocationNode';
+import { ObjectNode } from '#/features/canvas/components/nodes/ObjectNode';
+import { EventNode } from '#/features/canvas/components/nodes/EventNode';
+import { ConflictNode } from '#/features/canvas/components/nodes/ConflictNode';
+import { GoalNode } from '#/features/canvas/components/nodes/GoalNode';
+import { SecretNode } from '#/features/canvas/components/nodes/SecretNode';
+import { ThreadNode } from '#/features/canvas/components/nodes/ThreadNode';
 import { useUnsavedChangesWarning } from '#/features/canvas/hooks/useUnsavedChangesWarning';
 import { computeAutoLayout } from '#/features/canvas/utils/autoLayout';
 import { AIInsightsPanel } from '#/features/canvas/components/AIInsightsPanel';
@@ -24,38 +31,53 @@ import { useReactFlow } from '@xyflow/react';
 import { useStory } from '#/features/canvas/hooks/useStory';
 import { useGuestCanvas } from '#/features/canvas/hooks/useGuestCanvas';
 import { useMigrateGuestCanvas } from '#/features/canvas/hooks/useMigrateGuestCanvas';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Loader2 } from 'lucide-react';
 import { SignupModal } from '#/features/auth/components/SignupModal';
 import { MigrateGuestCanvasDialog } from '#/features/canvas/components/MigrateGuestCanvasDialog';
+import { useRunAnalysis } from '#/features/canvas/hooks/useAIAnalysis';
 
 /** Stable node type map — defined outside component to prevent remount on re-render. */
 const NODE_TYPES = {
   storyBeat: StoryBeatNode,
   character: CharacterNode,
   worldRule: WorldRuleNode,
+  location: LocationNode,
+  object: ObjectNode,
+  event: EventNode,
+  conflict: ConflictNode,
+  goal: GoalNode,
+  secret: SecretNode,
+  thread: ThreadNode,
 } as const;
 
 /**
  * Invisible helper component to run auto-layout once when a story is first loaded.
  */
-function AutoLayoutOnLoad() {
+function AutoLayoutOnLoad({ isLoading }: { isLoading: boolean }) {
   const { fitView } = useReactFlow();
-  const nodes = useCanvasStore(state => state.nodes)
-  const edges = useCanvasStore(state => state.edges)
-  const setNodes = useCanvasStore(state => state.setNodes)
-  const storyId = useCanvasStore(state => state.storyId)
-  const [lastLayoutId, setLastLayoutId] = useState<string | null>(null);
+  const setNodes = useCanvasStore(state => state.setNodes);
+  const hasLaidOut = useRef(false);
 
   useEffect(() => {
-    // Only layout once per story load when nodes are populated
-    if (storyId && storyId !== lastLayoutId && nodes.length > 0) {
-      const laid = computeAutoLayout(nodes, edges);
-      setNodes(laid);
-      setLastLayoutId(storyId);
-      // Wait a tick for nodes to render their new positions before fitting
-      setTimeout(() => fitView({ padding: 0.2, duration: 500 }), 50);
+    // Only layout once per mount, right after loading finishes
+    if (!isLoading && !hasLaidOut.current) {
+      const { nodes } = useCanvasStore.getState();
+      if (nodes.length > 0) {
+        hasLaidOut.current = true;
+        
+        // Wait a short delay for React Flow to render and measure the newly loaded nodes
+        setTimeout(() => {
+          const currentNodes = useCanvasStore.getState().nodes;
+          const currentEdges = useCanvasStore.getState().edges;
+          const laid = computeAutoLayout(currentNodes, currentEdges);
+          setNodes(laid);
+          
+          // Wait a tick for nodes to render their new positions before fitting
+          setTimeout(() => fitView({ padding: 0.2, duration: 500 }), 50);
+        }, 100);
+      }
     }
-  }, [storyId, nodes.length, edges, lastLayoutId, setNodes, fitView]);
+  }, [isLoading, setNodes, fitView]);
 
   return null;
 }
@@ -79,6 +101,7 @@ export function StoryCanvas({ isGuestMode = false }: { isGuestMode?: boolean }) 
   } = useMigrateGuestCanvas();
 
   const [showSignupModal, setShowSignupModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [guestTitle, setGuestTitle] = useState(() => {
     if (isGuestMode) {
       return localStorage.getItem('plotweaver_guest_title') || 'My Story';
@@ -102,11 +125,16 @@ export function StoryCanvas({ isGuestMode = false }: { isGuestMode?: boolean }) 
   useEffect(() => {
     if (isGuestMode) {
       loadGuestCanvas();
+      setIsLoading(false);
     } else if (storyId) {
       setStoryId(storyId);
-      loadCanvas(storyId).catch((error) => {
-        console.error('Failed to load canvas:', error);
-      });
+      setIsLoading(true);
+      loadCanvas(storyId)
+        .then(() => setIsLoading(false))
+        .catch((error) => {
+          console.error('Failed to load canvas:', error);
+          setIsLoading(false);
+        });
     }
   }, [isGuestMode, storyId, loadCanvas, loadGuestCanvas, setStoryId]);
 
@@ -123,6 +151,22 @@ export function StoryCanvas({ isGuestMode = false }: { isGuestMode?: boolean }) 
 
     return () => clearInterval(interval);
   }, [isGuestMode, storyId, saveCanvas]);
+
+  const { mutate: runAnalysis } = useRunAnalysis();
+  const lastEditedNodeId = useCanvasStore((state) => state.lastEditedNodeId);
+  const lastEditedTimestamp = useCanvasStore((state) => state.lastEditedTimestamp);
+
+  // Auto-run analysis when a node is edited (debounced)
+  useEffect(() => {
+    if (!storyId || !lastEditedNodeId || !lastEditedTimestamp) return;
+    
+    // Debounce for 3 seconds after last edit
+    const timeout = setTimeout(() => {
+      runAnalysis({ storyId, editedNodeId: lastEditedNodeId });
+    }, 3000);
+
+    return () => clearTimeout(timeout);
+  }, [storyId, lastEditedNodeId, lastEditedTimestamp, runAnalysis]);
 
   const handleNodeClick = useCallback(
     (_: React.MouseEvent, node: { id: string }) => {
@@ -182,6 +226,12 @@ export function StoryCanvas({ isGuestMode = false }: { isGuestMode?: boolean }) 
           </div>
         )}
         <div className={isGuestMode ? 'h-full pt-11' : 'h-full'}>
+          {isLoading && (
+            <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-(--bg-base)/80 backdrop-blur-sm animate-in fade-in duration-300">
+              <Loader2 className="w-10 h-10 text-violet-500 animate-spin mb-4" />
+              <p className="text-lg font-medium text-(--sea-ink)">Loading canvas...</p>
+            </div>
+          )}
           <ReactFlow
             nodes={nodes}
             edges={edges}
@@ -200,7 +250,7 @@ export function StoryCanvas({ isGuestMode = false }: { isGuestMode?: boolean }) 
               style: { strokeWidth: 2, stroke: 'var(--lagoon)' },
             }}
           >
-            <AutoLayoutOnLoad />
+            <AutoLayoutOnLoad isLoading={isLoading} />
 
             {/* Sidebar inside ReactFlow so useReactFlow() context is available */}
             <NodesSidebar />

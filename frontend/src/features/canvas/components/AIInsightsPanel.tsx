@@ -242,7 +242,7 @@ function AIInsightsSidebarContent() {
 
   const handleRunAnalysis = () => {
     if (!storyId) return
-    runAnalysis(storyId, { onSuccess: () => setHasRun(true) })
+    runAnalysis({ storyId }, { onSuccess: () => setHasRun(true) })
   }
 
   return (
