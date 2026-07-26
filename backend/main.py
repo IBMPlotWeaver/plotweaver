@@ -11,7 +11,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from supabase import create_client, Client
 from ibm_watsonx_ai import Credentials
-from ibm_watsonx_ai.foundation_models import ModelInference
+from ibm_watsonx_ai.foundation_models import ModelInference, Embeddings
+import math
 
 load_dotenv()
 
@@ -43,6 +44,110 @@ def get_supabase() -> Client:
         raise HTTPException(status_code=503, detail="Supabase env vars not configured.")
     return create_client(url, key)
 
+
+def get_granite_embeddings() -> Embeddings:
+    api_key = os.getenv("WATSONX_API_KEY", "")
+    project_id = os.getenv("WATSONX_PROJECT_ID", "")
+    url = os.getenv("WATSONX_URL", "https://us-south.ml.cloud.ibm.com")
+    if not api_key or not project_id:
+        return None  # Fallback gracefully
+    from ibm_watsonx_ai import Credentials
+    credentials = Credentials(api_key=api_key, url=url)
+    return Embeddings(
+        model_id="ibm/slate-30m-english-rtrvr",
+        credentials=credentials,
+        project_id=project_id,
+    )
+
+def cosine_similarity(v1, v2):
+    dot_product = sum(a * b for a, b in zip(v1, v2))
+    mag1 = math.sqrt(sum(a * a for a in v1))
+    mag2 = math.sqrt(sum(b * b for b in v2))
+    if mag1 == 0 or mag2 == 0:
+        return 0
+    return dot_product / (mag1 * mag2)
+
+def extract_subgraph(request: AnalyzeRequest) -> AnalyzeRequest:
+    if not request.edited_node_id:
+        return request
+    
+    adj = {}
+    all_nodes = {}
+    node_texts = {}
+    
+    def add_node(n, text):
+        all_nodes[n.id] = n
+        node_texts[n.id] = text
+        if n.id not in adj:
+            adj[n.id] = []
+            
+    for b in request.beats: add_node(b, b.title + " " + b.summary)
+    for c in request.characters: add_node(c, c.name + " " + c.description)
+    for w in request.world_rules: add_node(w, w.title + " " + w.description)
+    for l in request.locations: add_node(l, l.name + " " + l.description)
+    for o in request.objects: add_node(o, o.name + " " + o.properties)
+    for e in request.events: add_node(e, e.description)
+    for r in request.relationships: add_node(r, f"Relationship between {r.source_character_id} and {r.target_character_id}")
+    for c in request.conflicts: add_node(c, c.stakes)
+    for g in request.goals: add_node(g, g.status + " " + g.obstacles)
+    for s in request.secrets: add_node(s, s.content)
+    for t in request.threads: add_node(t, t.description)
+    
+    for e in request.edges:
+        if e.source not in adj: adj[e.source] = []
+        if e.target not in adj: adj[e.target] = []
+        adj[e.source].append(e.target)
+        adj[e.target].append(e.source)
+        
+    if request.edited_node_id not in all_nodes:
+        return request
+        
+    visited = {request.edited_node_id}
+    queue = [(request.edited_node_id, 0)]
+    while queue:
+        curr, depth = queue.pop(0)
+        if depth < 2:
+            for neighbor in adj.get(curr, []):
+                if neighbor not in visited:
+                    visited.add(neighbor)
+                    queue.append((neighbor, depth + 1))
+                    
+    try:
+        embeddings_model = get_granite_embeddings()
+        if embeddings_model:
+            edited_text = node_texts[request.edited_node_id]
+            other_ids = [nid for nid in all_nodes.keys() if nid not in visited]
+            if other_ids:
+                texts_to_embed = [edited_text] + [node_texts[nid] for nid in other_ids]
+                embeddings = embeddings_model.embed_documents(texts_to_embed)
+                if embeddings:
+                    edited_emb = embeddings[0]
+                    sims = []
+                    for i, nid in enumerate(other_ids):
+                        sim = cosine_similarity(edited_emb, embeddings[i+1])
+                        sims.append((sim, nid))
+                    sims.sort(reverse=True)
+                    for _, nid in sims[:3]:
+                        visited.add(nid)
+    except Exception as e:
+        print("Embedding error:", e)
+        
+    return AnalyzeRequest(
+        story_id=request.story_id,
+        edited_node_id=request.edited_node_id,
+        edges=[e for e in request.edges if e.source in visited and e.target in visited],
+        beats=[b for b in request.beats if b.id in visited],
+        characters=[c for c in request.characters if c.id in visited],
+        world_rules=[w for w in request.world_rules if w.id in visited],
+        locations=[l for l in request.locations if l.id in visited],
+        objects=[o for o in request.objects if o.id in visited],
+        events=[e for e in request.events if e.id in visited],
+        relationships=[r for r in request.relationships if r.id in visited],
+        conflicts=[c for c in request.conflicts if c.id in visited],
+        goals=[g for g in request.goals if g.id in visited],
+        secrets=[s for s in request.secrets if s.id in visited],
+        threads=[t for t in request.threads if t.id in visited]
+    )
 
 def get_granite_model() -> ModelInference:
     api_key = os.getenv("WATSONX_API_KEY", "")
@@ -140,6 +245,11 @@ class Thread(BaseModel):
     last_referenced_event_id: str = ""
 
 
+class Edge(BaseModel):
+    id: str
+    source: str
+    target: str
+
 class WorldRule(BaseModel):
     id: str
     title: str
@@ -148,6 +258,8 @@ class WorldRule(BaseModel):
 
 class AnalyzeRequest(BaseModel):
     story_id: str
+    edited_node_id: Optional[str] = None
+    edges: list[Edge] = []
     beats: list[StoryBeat] = []
     characters: list[Character] = []
     world_rules: list[WorldRule] = []
@@ -588,8 +700,11 @@ async def analyze_story(request: AnalyzeRequest):
     4. Clear previous unresolved insights for this story, then insert new ones.
     5. Return the insights list plus a plain-English summary.
     """
-    if not request.beats:
-        return AnalyzeResponse(insights=[], summary="No story beats to analyse yet.")
+    if not request.beats and not request.characters and not request.world_rules:
+        return AnalyzeResponse(insights=[], summary="No story content to analyse yet.")
+
+    # Subgraph extraction (Context Forge)
+    request = extract_subgraph(request)
 
     # Build prompt and call Granite
     prompt = build_analysis_prompt(request.beats, request.characters, request.world_rules, request.locations, request.objects, request.events, request.relationships, request.conflicts, request.goals, request.secrets, request.threads)

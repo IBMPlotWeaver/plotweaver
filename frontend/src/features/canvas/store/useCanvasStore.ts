@@ -10,6 +10,13 @@ import type {
   StoryBeatNodeData,
   CharacterNodeData,
   WorldRuleNodeData,
+  LocationNodeData,
+  ObjectNodeData,
+  EventNodeData,
+  ConflictNodeData,
+  GoalNodeData,
+  SecretNodeData,
+  ThreadNodeData,
 } from '#/features/canvas/types/canvas.types'
 import { supabase } from '#/lib/supabase'
 
@@ -37,6 +44,37 @@ const DEFAULT_NODE_DATA: Record<StoryNodeType, StoryNodeData> = {
     title: 'New World Rule',
     description: 'Describe the constraint or rule...',
   } as WorldRuleNodeData,
+  location: {
+    type: 'location',
+    name: 'New Location',
+    description: 'Describe the location...',
+  } as LocationNodeData,
+  object: {
+    type: 'object',
+    name: 'New Object',
+    properties: 'Describe the object properties...',
+  } as ObjectNodeData,
+  event: {
+    type: 'event',
+    description: 'Describe the event...',
+    timelinePosition: 0,
+  } as EventNodeData,
+  conflict: {
+    type: 'conflict',
+    stakes: 'Describe the stakes...',
+  } as ConflictNodeData,
+  goal: {
+    type: 'goal',
+    status: 'Describe the goal status...',
+  } as GoalNodeData,
+  secret: {
+    type: 'secret',
+    content: 'Describe the secret...',
+  } as SecretNodeData,
+  thread: {
+    type: 'thread',
+    description: 'Describe the thread...',
+  } as ThreadNodeData,
 }
 
 /** Zustand store managing nodes, edges, and selection state for the story canvas. */
@@ -52,6 +90,8 @@ export const useCanvasStore = create<
   selectedNodeId: null,
   storyId: null,
   hasUnsavedChanges: false,
+  lastEditedNodeId: null,
+  lastEditedTimestamp: null,
 
   onNodesChange: (changes) => {
     const isDirty = changes.some(
@@ -111,14 +151,14 @@ export const useCanvasStore = create<
   },
 
   updateNodeData: (id, data) =>
-    set({
-      nodes: get().nodes.map((n) =>
-        n.id === id
-          ? { ...n, data: { ...n.data, ...data } as StoryNodeData }
-          : n,
+    set((state) => ({
+      nodes: state.nodes.map((n) =>
+        n.id === id ? { ...n, data: { ...n.data, ...data } as StoryNodeData } : n,
       ),
       hasUnsavedChanges: true,
-    }),
+      lastEditedNodeId: id,
+      lastEditedTimestamp: Date.now(),
+    })),
 
   deleteNode: (id) =>
     set({

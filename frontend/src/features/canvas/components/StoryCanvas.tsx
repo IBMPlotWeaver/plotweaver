@@ -34,6 +34,7 @@ import { useMigrateGuestCanvas } from '#/features/canvas/hooks/useMigrateGuestCa
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { SignupModal } from '#/features/auth/components/SignupModal';
 import { MigrateGuestCanvasDialog } from '#/features/canvas/components/MigrateGuestCanvasDialog';
+import { useRunAnalysis } from '#/features/canvas/hooks/useAIAnalysis';
 
 /** Stable node type map — defined outside component to prevent remount on re-render. */
 const NODE_TYPES = {
@@ -143,6 +144,22 @@ export function StoryCanvas({ isGuestMode = false }: { isGuestMode?: boolean }) 
 
     return () => clearInterval(interval);
   }, [isGuestMode, storyId, saveCanvas]);
+
+  const { mutate: runAnalysis } = useRunAnalysis();
+  const lastEditedNodeId = useCanvasStore((state) => state.lastEditedNodeId);
+  const lastEditedTimestamp = useCanvasStore((state) => state.lastEditedTimestamp);
+
+  // Auto-run analysis when a node is edited (debounced)
+  useEffect(() => {
+    if (!storyId || !lastEditedNodeId || !lastEditedTimestamp) return;
+    
+    // Debounce for 3 seconds after last edit
+    const timeout = setTimeout(() => {
+      runAnalysis({ storyId, editedNodeId: lastEditedNodeId });
+    }, 3000);
+
+    return () => clearTimeout(timeout);
+  }, [storyId, lastEditedNodeId, lastEditedTimestamp, runAnalysis]);
 
   const handleNodeClick = useCallback(
     (_: React.MouseEvent, node: { id: string }) => {

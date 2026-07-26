@@ -142,6 +142,8 @@ export interface CanvasState {
   selectedNodeId: string | null;
   storyId: string | null;
   hasUnsavedChanges: boolean;
+  lastEditedNodeId: string | null;
+  lastEditedTimestamp: number | null;
   
   // Node operations
   addNode: (type: StoryNodeType, position?: { x: number; y: number }) => void;
