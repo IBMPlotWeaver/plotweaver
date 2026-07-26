@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import {
   ReactFlow,
   Background,
@@ -53,24 +53,31 @@ const NODE_TYPES = {
 /**
  * Invisible helper component to run auto-layout once when a story is first loaded.
  */
-function AutoLayoutOnLoad() {
+function AutoLayoutOnLoad({ isLoading }: { isLoading: boolean }) {
   const { fitView } = useReactFlow();
-  const nodes = useCanvasStore(state => state.nodes)
-  const edges = useCanvasStore(state => state.edges)
-  const setNodes = useCanvasStore(state => state.setNodes)
-  const storyId = useCanvasStore(state => state.storyId)
-  const [lastLayoutId, setLastLayoutId] = useState<string | null>(null);
+  const setNodes = useCanvasStore(state => state.setNodes);
+  const hasLaidOut = useRef(false);
 
   useEffect(() => {
-    // Only layout once per story load when nodes are populated
-    if (storyId && storyId !== lastLayoutId && nodes.length > 0) {
-      const laid = computeAutoLayout(nodes, edges);
-      setNodes(laid);
-      setLastLayoutId(storyId);
-      // Wait a tick for nodes to render their new positions before fitting
-      setTimeout(() => fitView({ padding: 0.2, duration: 500 }), 50);
+    // Only layout once per mount, right after loading finishes
+    if (!isLoading && !hasLaidOut.current) {
+      const { nodes } = useCanvasStore.getState();
+      if (nodes.length > 0) {
+        hasLaidOut.current = true;
+        
+        // Wait a short delay for React Flow to render and measure the newly loaded nodes
+        setTimeout(() => {
+          const currentNodes = useCanvasStore.getState().nodes;
+          const currentEdges = useCanvasStore.getState().edges;
+          const laid = computeAutoLayout(currentNodes, currentEdges);
+          setNodes(laid);
+          
+          // Wait a tick for nodes to render their new positions before fitting
+          setTimeout(() => fitView({ padding: 0.2, duration: 500 }), 50);
+        }, 100);
+      }
     }
-  }, [storyId, nodes.length, edges, lastLayoutId, setNodes, fitView]);
+  }, [isLoading, setNodes, fitView]);
 
   return null;
 }
@@ -243,7 +250,7 @@ export function StoryCanvas({ isGuestMode = false }: { isGuestMode?: boolean }) 
               style: { strokeWidth: 2, stroke: 'var(--lagoon)' },
             }}
           >
-            <AutoLayoutOnLoad />
+            <AutoLayoutOnLoad isLoading={isLoading} />
 
             {/* Sidebar inside ReactFlow so useReactFlow() context is available */}
             <NodesSidebar />
