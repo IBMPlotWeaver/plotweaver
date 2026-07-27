@@ -19,6 +19,9 @@ export interface AIInsight {
   content: string
   status: 'unresolved' | 'resolved'
   created_at: string
+  agent?: string
+  guardian_verdict?: string
+  confidence?: number
 }
 
 export interface AnalyzeResponse {
@@ -96,13 +99,23 @@ export function useRunAnalysis() {
         })
 
       // Add remaining types
-      const locations = nodes.filter((n) => n.type === 'location').map((n) => n.data)
-      const objects = nodes.filter((n) => n.type === 'object').map((n) => n.data)
-      const events = nodes.filter((n) => n.type === 'event').map((n) => n.data)
-      const conflicts = nodes.filter((n) => n.type === 'conflict').map((n) => n.data)
-      const goals = nodes.filter((n) => n.type === 'goal').map((n) => n.data)
-      const secrets = nodes.filter((n) => n.type === 'secret').map((n) => n.data)
-      const threads = nodes.filter((n) => n.type === 'thread').map((n) => n.data)
+      const locations = nodes.filter((n) => n.type === 'location').map((n) => ({ id: n.id, ...n.data }))
+      const objects = nodes.filter((n) => n.type === 'object').map((n) => ({ id: n.id, ...n.data }))
+      const events = nodes.filter((n) => n.type === 'event').map((n) => ({ id: n.id, ...n.data }))
+      const conflicts = nodes.filter((n) => n.type === 'conflict').map((n) => ({ id: n.id, ...n.data }))
+      const goals = nodes.filter((n) => n.type === 'goal').map((n) => ({ id: n.id, ...n.data }))
+      const secrets = nodes.filter((n) => n.type === 'secret').map((n) => ({ id: n.id, ...n.data }))
+      const threads = nodes.filter((n) => n.type === 'thread').map((n) => ({ id: n.id, ...n.data }))
+      const relationships = edges
+        .filter((e) => e.data?.type === 'relationship')
+        .map((e) => ({
+          id: e.id,
+          source_character_id: e.source,
+          target_character_id: e.target,
+          trust_level: String(e.data?.trustLevel || ''),
+          history: e.data?.history || '',
+          status: e.data?.status || ''
+        }))
 
       const formattedEdges = edges.map((e) => ({
         id: e.id,
@@ -126,7 +139,8 @@ export function useRunAnalysis() {
           conflicts,
           goals,
           secrets,
-          threads
+          threads,
+          relationships
         }),
       })
 
@@ -154,7 +168,7 @@ export function useRunAnalysis() {
         if (node.type === 'storyBeat') {
           useCanvasStore
             .getState()
-            .updateNodeData(node.id, { hasAIWarning: warningNodeIds.has(node.id) } as Partial<StoryBeatNodeData>)
+            .updateNodeData(node.id, { hasAIWarning: warningNodeIds.has(node.id) } as Partial<StoryBeatNodeData>, true)
         }
       })
     },
@@ -194,7 +208,7 @@ export function useResolveInsight(storyId: string | null) {
         if (node.type === 'storyBeat') {
           useCanvasStore
             .getState()
-            .updateNodeData(node.id, { hasAIWarning: warningNodeIds.has(node.id) } as Partial<StoryBeatNodeData>)
+            .updateNodeData(node.id, { hasAIWarning: warningNodeIds.has(node.id) } as Partial<StoryBeatNodeData>, true)
         }
       })
     },

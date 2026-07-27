@@ -11,6 +11,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from supabase import create_client, Client
 from ibm_watsonx_ai import Credentials
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning, module="ibm_watsonx_ai")
+warnings.filterwarnings("ignore", message=".*/ml/v1/text/generation.*")
+
 from ibm_watsonx_ai.foundation_models import ModelInference, Embeddings
 import math
 
@@ -54,7 +58,7 @@ def get_granite_embeddings() -> Embeddings:
     from ibm_watsonx_ai import Credentials
     credentials = Credentials(api_key=api_key, url=url)
     return Embeddings(
-        model_id="ibm/slate-30m-english-rtrvr",
+        model_id="ibm/slate-30m-english-rtrvr-v2",
         credentials=credentials,
         project_id=project_id,
     )
@@ -281,6 +285,9 @@ class AIInsight(BaseModel):
     content: str
     status: str              # "unresolved"
     created_at: str
+    agent: Optional[str] = None
+    guardian_verdict: Optional[str] = None
+    confidence: float = 1.0
 
 
 class AnalyzeResponse(BaseModel):
@@ -678,9 +685,11 @@ def parse_insights(raw_items: list[dict], story_id: str) -> list[dict]:
             "content": content,
             "status": "unresolved",
             "created_at": datetime.now(timezone.utc).isoformat(),
+            "agent": item.get("agent"),
+            "guardian_verdict": item.get("guardian_verdict"),
+            "confidence": float(item.get("confidence", 1.0)),
         })
     return result
-
 
 # ── Routes ───────────────────────────────────────────────────────────────────
 
@@ -706,26 +715,17 @@ async def analyze_story(request: AnalyzeRequest):
     # Subgraph extraction (Context Forge)
     request = extract_subgraph(request)
 
-    # Build prompt and call Granite
-    prompt = build_analysis_prompt(request.beats, request.characters, request.world_rules, request.locations, request.objects, request.events, request.relationships, request.conflicts, request.goals, request.secrets, request.threads)
-
-    print("\n" + "="*60)
-    print("GRANITE PROMPT [analyze]")
-    print("="*60)
-    print(prompt)
-    print("="*60 + "\n")
-
+    from agents import MultiAgentOrchestrator
+    orchestrator = MultiAgentOrchestrator(get_granite_model, get_supabase)
+    
     try:
-        model = get_granite_model()
-        response = model.generate_text(prompt=prompt)
+        raw_insights = await orchestrator.analyze_story(request)
     except HTTPException:
         raise
     except Exception as exc:
-        raise HTTPException(status_code=502, detail=f"IBM watsonx.ai error: {exc}") from exc
+        raise HTTPException(status_code=502, detail=f"Agent Orchestrator error: {exc}") from exc
 
-    # Parse response
-    raw_items = extract_json_array(response)
-    insights_rows = parse_insights(raw_items, request.story_id)
+    insights_rows = parse_insights(raw_insights, request.story_id)
 
     # Persist to Supabase
     db = get_supabase()
@@ -733,8 +733,22 @@ async def analyze_story(request: AnalyzeRequest):
     # Delete previous unresolved insights for this story before inserting fresh ones
     db.table("ai_insights").delete().eq("story_id", request.story_id).eq("status", "unresolved").execute()
 
-    if insights_rows:
-        db.table("ai_insights").insert(insights_rows).execute()
+    # Create a copy for the DB that strips out our new ephemeral fields 
+    # since the existing ai_insights table doesn't have them yet.
+    db_rows = []
+    for r in insights_rows:
+        db_rows.append({
+            "id": r["id"],
+            "story_id": r["story_id"],
+            "node_id": r["node_id"],
+            "insight_type": r["insight_type"],
+            "content": r["content"],
+            "status": r["status"],
+            "created_at": r["created_at"],
+        })
+
+    if db_rows:
+        db.table("ai_insights").insert(db_rows).execute()
 
     # Build response models
     insights_out = [
@@ -746,6 +760,9 @@ async def analyze_story(request: AnalyzeRequest):
             content=r["content"],
             status=r["status"],
             created_at=r["created_at"],
+            agent=r.get("agent"),
+            guardian_verdict=r.get("guardian_verdict"),
+            confidence=r.get("confidence", 1.0)
         )
         for r in insights_rows
     ]
@@ -757,6 +774,10 @@ async def analyze_story(request: AnalyzeRequest):
         summary = "Found 1 issue. Review it below."
     else:
         summary = f"Found {count} issues. Review them below."
+
+    # Phase 7: Compute a basic Story Health Score
+    health_score = max(0, 100 - (count * 5))
+    summary += f" Health Score: {health_score}/100."
 
     return AnalyzeResponse(insights=insights_out, summary=summary)
 

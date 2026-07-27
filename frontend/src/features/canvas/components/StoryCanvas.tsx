@@ -90,7 +90,7 @@ export function StoryCanvas({ isGuestMode = false }: { isGuestMode?: boolean }) 
   const params = useParams({ strict: false });
   const storyId = isGuestMode ? null : (params as { storyId?: string }).storyId;
   const { data: story } = useStory(storyId || '');
-  const { loadGuestCanvas, getRemainingAICount, clearGuestCanvas } = useGuestCanvas();
+  const { loadGuestCanvas, getRemainingAICount, clearGuestCanvas } = useGuestCanvas({ autoSave: isGuestMode });
   const {
     promptMigration,
     handleSave,

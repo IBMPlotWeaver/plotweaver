@@ -150,14 +150,16 @@ export const useCanvasStore = create<
     set({ nodes: [...nodes, newNode], hasUnsavedChanges: true })
   },
 
-  updateNodeData: (id, data) =>
+  updateNodeData: (id, data, skipEditTracking = false) =>
     set((state) => ({
       nodes: state.nodes.map((n) =>
         n.id === id ? { ...n, data: { ...n.data, ...data } as StoryNodeData } : n,
       ),
-      hasUnsavedChanges: true,
-      lastEditedNodeId: id,
-      lastEditedTimestamp: Date.now(),
+      hasUnsavedChanges: !skipEditTracking,
+      ...(skipEditTracking ? {} : {
+        lastEditedNodeId: id,
+        lastEditedTimestamp: Date.now(),
+      })
     })),
 
   deleteNode: (id) =>
