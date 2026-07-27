@@ -18,7 +18,8 @@ interface GuestCanvasData {
  * Hook for managing guest canvas data in localStorage.
  * Handles auto-save, expiration, and AI analysis limits.
  */
-export function useGuestCanvas() {
+export function useGuestCanvas(options: { autoSave?: boolean } = {}) {
+  const { autoSave = false } = options;
   const nodes = useCanvasStore(state => state.nodes);
   const edges = useCanvasStore(state => state.edges);
   const setNodes = useCanvasStore(state => state.setNodes);
@@ -160,8 +161,9 @@ export function useGuestCanvas() {
     }
   }, []);
 
-  // Auto-save every 10 seconds
+  // Auto-save every 10 seconds (only if autoSave is enabled)
   useEffect(() => {
+    if (!autoSave) return;
     const interval = setInterval(() => {
       if (nodes.length > 0 || edges.length > 0) {
         saveGuestCanvas();
@@ -169,10 +171,11 @@ export function useGuestCanvas() {
     }, 10000);
 
     return () => clearInterval(interval);
-  }, [nodes, edges, saveGuestCanvas]);
+  }, [nodes, edges, saveGuestCanvas, autoSave]);
 
-  // Warn before leaving page with unsaved changes
+  // Warn before leaving page with unsaved changes (only if autoSave is enabled)
   useEffect(() => {
+    if (!autoSave) return;
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (nodes.length > 0 || edges.length > 0) {
         e.preventDefault();
@@ -182,7 +185,7 @@ export function useGuestCanvas() {
 
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [nodes, edges]);
+  }, [nodes, edges, autoSave]);
 
   return {
     loadGuestCanvas,

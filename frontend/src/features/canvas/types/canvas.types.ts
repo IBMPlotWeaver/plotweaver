@@ -147,7 +147,7 @@ export interface CanvasState {
   
   // Node operations
   addNode: (type: StoryNodeType, position?: { x: number; y: number }) => void;
-  updateNodeData: (id: string, data: Partial<StoryNodeData>) => void;
+  updateNodeData: (id: string, data: Partial<StoryNodeData>, skipEditTracking?: boolean) => void;
   deleteNode: (id: string) => void;
   
   // Bulk operations

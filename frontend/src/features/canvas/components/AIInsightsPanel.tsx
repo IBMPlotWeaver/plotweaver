@@ -109,99 +109,124 @@ function InsightCard({
 
   return (
     <div
-      className={`rounded-xl border-2 overflow-hidden transition-all duration-200 ${resolved
-        ? 'opacity-60 border-(--line) bg-(--surface)'
-        : `${meta.borderColor} ${meta.bg} hover:shadow-md`
-        }`}
+      className={`relative flex flex-col gap-3 p-4 rounded-xl border transition-all duration-300 ${
+        resolved ? 'opacity-50 grayscale bg-gray-50 dark:bg-gray-900 border-gray-200' : `${meta.bg} ${meta.borderColor} shadow-sm`
+      }`}
     >
-      {/* Header */}
-      <div className="p-3 flex items-center gap-2">
-        <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold ${meta.bg} ${meta.color} border ${meta.borderColor}`}>
-          {meta.icon}
-          {meta.label}
-        </span>
-        {beatTitle && (
-          <span className="flex items-center gap-1 text-[10px] text-(--sea-ink-soft) ml-auto truncate">
-            <ChevronRight className="w-3 h-3 shrink-0" />
-            <span className="truncate max-w-32">{beatTitle}</span>
-          </span>
-        )}
-      </div>
-
-      {/* Content */}
-      <div className="px-3 pb-3">
-        <div className={`text-sm text-(--sea-ink) leading-relaxed ${expanded ? '' : 'line-clamp-3'}`}>
-          {insight.content}
-        </div>
-
-        {/* Expand / collapse long content */}
-        {insight.content.length > 150 && (
-          <button
-            onClick={() => setExpanded(!expanded)}
-            className="mt-2 flex items-center gap-1 text-[11px] font-medium text-(--sea-ink-soft) hover:text-(--sea-ink) transition-colors"
-          >
-            {expanded ? (
-              <>
-                <ChevronUp className="w-3 h-3" />
-                Show less
-              </>
-            ) : (
-              <>
-                <ChevronDown className="w-3 h-3" />
-                Show more
-              </>
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+            <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold ${meta.bg} ${meta.color} border ${meta.borderColor}`}>
+              {meta.icon}
+              {meta.label}
+            </span>
+            {insight.agent && (
+              <span className="text-[10px] bg-(--surface) px-2 py-0.5 rounded-full border border-(--line) text-(--sea-ink-soft) flex items-center gap-1">
+                <BrainCircuit className="w-3 h-3" />
+                {insight.agent}
+              </span>
             )}
-          </button>
-        )}
-
-        {/* Brainstorm suggestions */}
-        {showSuggestions && suggestions.length > 0 && (
-          <div className="flex flex-col gap-1.5 mt-2 border-t border-(--line) pt-2">
-            <p className="text-[10px] font-semibold text-violet-500 uppercase tracking-wide">AI Suggestions</p>
-            {suggestions.map((s, i) => (
-              <div key={i} className="rounded-lg bg-violet-50 dark:bg-violet-900/20 p-2">
-                <p className="text-[11px] font-semibold text-violet-700 dark:text-violet-300">{s.title}</p>
-                <p className="text-[11px] text-(--sea-ink-soft) leading-relaxed mt-0.5">{s.description}</p>
-              </div>
-            ))}
           </div>
-        )}
-
-        {brainstormError && (
-          <p className="text-[11px] text-rose-500 mt-1">{brainstormError.message}</p>
-        )}
-
-        {/* Actions */}
-        {!resolved && (
-          <div className="flex items-center gap-1 mt-3 self-end">
-            <button
-              onClick={handleBrainstorm}
-              disabled={isBrainstorming}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/30 transition-colors cursor-pointer disabled:opacity-50"
-            >
-              {isBrainstorming ? (
-                <Loader2 className="w-3 h-3 animate-spin" />
-              ) : showSuggestions && suggestions.length > 0 ? (
-                <ChevronUp className="w-3 h-3" />
-              ) : (
-                <Wand2 className="w-3 h-3" />
-              )}
-              {isBrainstorming ? 'Thinking…' : showSuggestions && suggestions.length > 0 ? 'Hide' : 'Brainstorm'}
-            </button>
-            <button
-              onClick={() => onResolve(insight.id)}
-              disabled={isResolving}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-colors cursor-pointer disabled:opacity-50"
-            >
-              {isResolving ? (
-                <Loader2 className="w-3 h-3 animate-spin" />
-              ) : (
-                <CheckCircle2 className="w-3 h-3" />
-              )}
-              Mark resolved
-            </button>
+          {beatTitle && (
+            <p className="text-xs font-medium text-(--sea-ink) truncate mb-1">
+              <ChevronRight className="w-3 h-3 inline-block align-text-bottom mr-1" />
+              {beatTitle}
+            </p>
+          )}
+          <div className={`text-sm text-(--sea-ink) leading-relaxed ${expanded ? '' : 'line-clamp-3'}`}>
+            {insight.content}
           </div>
-        )}
+          
+          {/* Phase 5 Explanation Card / Provenance */}
+          {(insight.guardian_verdict || insight.confidence !== undefined) && !resolved && (
+             <div className="mt-3 pt-3 border-t border-(--line) flex items-center justify-between text-[11px] text-(--sea-ink-soft)">
+               {insight.guardian_verdict && (
+                 <span className="flex items-center gap-1" title="Granite Guardian Verdict">
+                   {insight.guardian_verdict === 'verified' ? (
+                     <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
+                   ) : (
+                     <AlertCircle className="w-3.5 h-3.5 text-amber-500" />
+                   )}
+                   Guardian: {insight.guardian_verdict}
+                 </span>
+               )}
+               {insight.confidence !== undefined && (
+                 <span title="Model Confidence Score">
+                   Confidence: {Math.round(insight.confidence * 100)}%
+                 </span>
+               )}
+             </div>
+          )}
+
+          {/* Expand / collapse long content */}
+          {insight.content.length > 150 && (
+            <button
+              onClick={() => setExpanded(!expanded)}
+              className="mt-2 flex items-center gap-1 text-[11px] font-medium text-(--sea-ink-soft) hover:text-(--sea-ink) transition-colors"
+            >
+              {expanded ? (
+                <>
+                  <ChevronUp className="w-3 h-3" />
+                  Show less
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="w-3 h-3" />
+                  Show more
+                </>
+              )}
+            </button>
+          )}
+
+          {/* Brainstorm suggestions */}
+          {showSuggestions && suggestions.length > 0 && (
+            <div className="flex flex-col gap-1.5 mt-2 border-t border-(--line) pt-2">
+              <p className="text-[10px] font-semibold text-violet-500 uppercase tracking-wide">AI Suggestions</p>
+              {suggestions.map((s, i) => (
+                <div key={i} className="rounded-lg bg-violet-50 dark:bg-violet-900/20 p-2">
+                  <p className="text-[11px] font-semibold text-violet-700 dark:text-violet-300">{s.title}</p>
+                  <p className="text-[11px] text-(--sea-ink-soft) leading-relaxed mt-0.5">{s.description}</p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {brainstormError && (
+            <p className="text-[11px] text-rose-500 mt-1">{brainstormError.message}</p>
+          )}
+
+          {/* Actions */}
+          {!resolved && (
+            <div className="flex items-center gap-1 mt-3 self-end">
+              <button
+                onClick={handleBrainstorm}
+                disabled={isBrainstorming}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/30 transition-colors cursor-pointer disabled:opacity-50"
+              >
+                {isBrainstorming ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : showSuggestions && suggestions.length > 0 ? (
+                  <ChevronUp className="w-3 h-3" />
+                ) : (
+                  <Wand2 className="w-3 h-3" />
+                )}
+                {isBrainstorming ? 'Thinking…' : showSuggestions && suggestions.length > 0 ? 'Hide' : 'Brainstorm'}
+              </button>
+              <button
+                onClick={() => onResolve(insight.id)}
+                disabled={isResolving}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-colors cursor-pointer disabled:opacity-50"
+              >
+                {isResolving ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : (
+                  <CheckCircle2 className="w-3 h-3" />
+                )}
+                Mark resolved
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

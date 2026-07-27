@@ -24,8 +24,6 @@ const RANK_SEPARATION = 100;
 export function computeAutoLayout(nodes: StoryNode[], edges: StoryEdge[]): StoryNode[] {
   // Separate node types
   const beatNodes = nodes.filter((n) => n.type === 'storyBeat');
-  const characterNodes = nodes.filter((n) => n.type === 'character');
-  const worldRuleNodes = nodes.filter((n) => n.type === 'worldRule');
 
   // --- Layout story beats via Dagre (left-to-right) ---
   const graph = new dagre.graphlib.Graph();
