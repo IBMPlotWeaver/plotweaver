@@ -35,6 +35,7 @@ import { AlertCircle, Loader2 } from 'lucide-react';
 import { SignupModal } from '#/features/auth/components/SignupModal';
 import { MigrateGuestCanvasDialog } from '#/features/canvas/components/MigrateGuestCanvasDialog';
 import { useRunAnalysis } from '#/features/canvas/hooks/useAIAnalysis';
+import { QuickAddModal } from '#/features/canvas/components/QuickAddModal';
 
 /** Stable node type map — defined outside component to prevent remount on re-render. */
 const NODE_TYPES = {
@@ -101,6 +102,7 @@ export function StoryCanvas({ isGuestMode = false }: { isGuestMode?: boolean }) 
   } = useMigrateGuestCanvas();
 
   const [showSignupModal, setShowSignupModal] = useState(false);
+  const [showQuickAdd, setShowQuickAdd] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [guestTitle, setGuestTitle] = useState(() => {
     if (isGuestMode) {
@@ -206,6 +208,10 @@ export function StoryCanvas({ isGuestMode = false }: { isGuestMode?: boolean }) 
         onOpenChange={setShowSignupModal}
         onSuccess={handleSignupSuccess}
       />
+      <QuickAddModal 
+        open={showQuickAdd}
+        onOpenChange={setShowQuickAdd}
+      />
       <MigrateGuestCanvasDialog
         open={showMigrationDialog}
         onOpenChange={closeDialog}
@@ -262,6 +268,7 @@ export function StoryCanvas({ isGuestMode = false }: { isGuestMode?: boolean }) 
               onTitleChange={handleTitleChange}
               onGuestSave={() => setShowSignupModal(true)}
               onGuestReset={handleGuestReset}
+              onQuickAddClick={() => setShowQuickAdd(true)}
             />
 
             {/* AI Insights panel — slides in from the right */}

@@ -1,4 +1,4 @@
-import { Maximize2, Trash2, Save, LayoutGrid, Moon, Sun, Edit2, ArrowLeft, RotateCcw, FileDown, X, Loader2, Copy, Check, ZoomIn, ZoomOut } from 'lucide-react';
+import { Maximize2, Trash2, Save, LayoutGrid, Moon, Sun, Edit2, ArrowLeft, RotateCcw, FileDown, X, Loader2, Copy, Check, ZoomIn, ZoomOut, Wand2 } from 'lucide-react';
 import { useReactFlow } from '@xyflow/react';
 import { useCanvasStore } from '#/features/canvas/store/useCanvasStore';
 import { useThemeStore } from '#/features/store/useThemeStore';
@@ -24,6 +24,7 @@ interface CanvasToolbarProps {
   onTitleChange?: (title: string) => void;
   onGuestSave?: () => void;
   onGuestReset?: () => void;
+  onQuickAddClick?: () => void;
 }
 
 // ── Export modal ─────────────────────────────────────────────────────────────
@@ -110,7 +111,7 @@ function ExportModal({
  * Floating toolbar for the story canvas.
  * Provides node creation, zoom, fit-view, save, theme toggle, and export controls.
  */
-export function CanvasToolbar({ storyTitle = 'Untitled Story', isGuestMode = false, onTitleChange, onGuestSave, onGuestReset }: CanvasToolbarProps) {
+export function CanvasToolbar({ storyTitle = 'Untitled Story', isGuestMode = false, onTitleChange, onGuestSave, onGuestReset, onQuickAddClick }: CanvasToolbarProps) {
   const { fitView, zoomIn, zoomOut } = useReactFlow();
   const deleteNode = useCanvasStore(state => state.deleteNode)
   const selectedNodeId = useCanvasStore(state => state.selectedNodeId)
@@ -352,6 +353,16 @@ export function CanvasToolbar({ storyTitle = 'Untitled Story', isGuestMode = fal
               </button>
             </>
           )}
+
+          {/* Quick Add button */}
+          <button
+            onClick={onQuickAddClick}
+            className="island-shell flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-colors cursor-pointer border border-emerald-200 dark:border-emerald-800"
+            title="Extract nodes from text"
+          >
+            <Wand2 className="w-4 h-4" />
+            <span className="hidden sm:inline">Quick Add</span>
+          </button>
 
           {/* Export button */}
           <button

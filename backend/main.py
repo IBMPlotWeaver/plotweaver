@@ -6,7 +6,7 @@ from typing import Optional
 from datetime import datetime, timezone
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from supabase import create_client, Client
@@ -166,7 +166,7 @@ def get_granite_model() -> ModelInference:
         credentials=credentials,
         project_id=project_id,
         params={
-            "max_new_tokens": 1200,
+            "max_new_tokens": 4096,
             "temperature": 0.2,
             "repetition_penalty": 1.1,
         },
@@ -1039,3 +1039,43 @@ async def export_story(request: ExportMarkdownRequest):
         "format": "markdown",
         "content": markdown
     }
+
+class IngestTextRequest(BaseModel):
+    text: str
+
+@app.post("/api/ingest/text")
+async def ingest_text(request: IngestTextRequest):
+    from ingestion import extract_entities_from_text
+    try:
+        result = extract_entities_from_text(request.text)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/ingest/file")
+async def ingest_file(file: UploadFile = File(...)):
+    from docling.document_converter import DocumentConverter
+    import tempfile
+    import os
+    from ingestion import extract_entities_from_text
+
+    try:
+        # Save file to temp path
+        suffix = os.path.splitext(file.filename)[1] if file.filename else ".txt"
+        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp:
+            temp.write(await file.read())
+            temp_path = temp.name
+            
+        try:
+            # Parse with Docling
+            converter = DocumentConverter()
+            result = converter.convert(temp_path)
+            text = result.document.export_to_markdown()
+        finally:
+            os.remove(temp_path)
+            
+        # Extract entities
+        extracted = extract_entities_from_text(text)
+        return extracted
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
