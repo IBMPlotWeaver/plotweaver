@@ -123,6 +123,7 @@ export function CanvasToolbar({ storyTitle = 'Untitled Story', isGuestMode = fal
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState(storyTitle);
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
+  const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -218,6 +219,49 @@ export function CanvasToolbar({ storyTitle = 'Untitled Story', isGuestMode = fal
             >
               <RotateCcw className="w-4 h-4 mr-2" />
               Reset Workspace
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Export Confirmation Modal */}
+      <Dialog open={isExportConfirmOpen} onOpenChange={setIsExportConfirmOpen}>
+        <DialogContent className="max-w-md bg-(--surface) border-(--line) text-(--sea-ink)">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-lg font-semibold">
+              <FileDown className="w-5 h-5 text-violet-500" />
+              Export Story Outline
+            </DialogTitle>
+            <DialogDescription className="text-(--sea-ink-soft) mt-2 space-y-3">
+              <span>Are you sure you want to generate and export your story outline?</span>
+              <div className="p-3.5 rounded-xl bg-(--bg-base)/50 border border-(--line) text-xs space-y-1.5 mt-2">
+                <p className="font-semibold text-(--sea-ink)">Available Export Methods:</p>
+                <p className="text-(--sea-ink-soft)">📄 <strong>Plain Text File (.txt)</strong> — Download outline as a .txt document.</p>
+                <p className="text-(--sea-ink-soft)">📋 <strong>Copy to Clipboard</strong> — Copy formatted text directly.</p>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-4 gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => setIsExportConfirmOpen(false)}
+              className="border-(--line) text-(--sea-ink) hover:bg-(--line) cursor-pointer"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                setIsExportConfirmOpen(false);
+                handleExport();
+              }}
+              disabled={isExporting}
+              className="bg-violet-600 text-white hover:bg-violet-700 cursor-pointer"
+            >
+              {isExporting ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating...</>
+              ) : (
+                <><FileDown className="w-4 h-4 mr-2" /> Export Outline</>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -366,7 +410,7 @@ export function CanvasToolbar({ storyTitle = 'Untitled Story', isGuestMode = fal
 
           {/* Export button */}
           <button
-            onClick={handleExport}
+            onClick={() => setIsExportConfirmOpen(true)}
             disabled={isExporting}
             className="island-shell flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/30 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed border border-violet-200 dark:border-violet-800"
             title="Export story outline"
