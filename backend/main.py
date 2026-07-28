@@ -1057,24 +1057,49 @@ async def ingest_file(file: UploadFile = File(...)):
     from docling.document_converter import DocumentConverter
     import tempfile
     import os
+    import pypdfium2
     from ingestion import extract_entities_from_text
 
+    # 1. Enforce max file size: 5MB (5 * 1024 * 1024 bytes)
+    content = await file.read()
+    max_bytes = 5 * 1024 * 1024
+    if len(content) > max_bytes:
+        raise HTTPException(status_code=400, detail="File size exceeds the maximum limit of 5MB.")
+
+    suffix = os.path.splitext(file.filename)[1] if file.filename else ".pdf"
+    if suffix.lower() != ".pdf":
+        raise HTTPException(status_code=400, detail="Only PDF files are supported.")
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp:
+        temp.write(content)
+        temp_path = temp.name
+
     try:
-        # Save file to temp path
-        suffix = os.path.splitext(file.filename)[1] if file.filename else ".txt"
-        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp:
-            temp.write(await file.read())
-            temp_path = temp.name
-            
+        # 2. Enforce PDF page limit: Max 5 pages
         try:
-            # Parse with Docling
-            converter = DocumentConverter()
-            result = converter.convert(temp_path)
-            text = result.document.export_to_markdown()
-        finally:
+            pdf = pypdfium2.PdfDocument(temp_path)
+            page_count = len(pdf)
+            pdf.close()
+            if page_count > 5:
+                raise HTTPException(
+                    status_code=400, 
+                    detail=f"PDF has {page_count} pages. Maximum allowed is 5 pages."
+                )
+        except HTTPException:
+            raise
+        except Exception as pdf_err:
+            raise HTTPException(status_code=400, detail=f"Invalid or unreadable PDF file: {pdf_err}")
+
+        # 3. Parse with Docling
+        converter = DocumentConverter()
+        result = converter.convert(temp_path)
+        text = result.document.export_to_markdown()
+    finally:
+        if os.path.exists(temp_path):
             os.remove(temp_path)
-            
-        # Extract entities
+
+    # 4. Extract entities
+    try:
         extracted = extract_entities_from_text(text)
         return extracted
     except Exception as e:

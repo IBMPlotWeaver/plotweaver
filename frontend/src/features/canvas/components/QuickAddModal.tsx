@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter
 } from '#/features/shadcn/components/ui/dialog';
 import { Button } from '#/features/shadcn/components/ui/button';
 import { Textarea } from '#/features/shadcn/components/ui/textarea';
 import { Checkbox } from '#/features/shadcn/components/ui/checkbox';
-import { Loader2, Wand2, CheckCircle2 } from 'lucide-react';
+import { Loader2, Wand2, CheckCircle2, FileUp, FileText, File, X } from 'lucide-react';
 import { useCanvasStore } from '#/features/canvas/store/useCanvasStore';
 
 interface QuickAddModalProps {
@@ -25,27 +25,64 @@ interface ExtractedEntity {
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL ?? 'http://localhost:8000';
 
 export function QuickAddModal({ open, onOpenChange }: QuickAddModalProps) {
+  const [activeTab, setActiveTab] = useState<'text' | 'file'>('text');
   const [text, setText] = useState('');
+  const [file, setFile] = useState<File | null>(null);
   const [isExtracting, setIsExtracting] = useState(false);
   const [entities, setEntities] = useState<ExtractedEntity[]>([]);
   const [error, setError] = useState<string | null>(null);
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const addNode = useCanvasStore(state => state.addNode);
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile) {
+      if (selectedFile.type !== 'application/pdf' && !selectedFile.name.endsWith('.pdf')) {
+        setError('Only PDF files are supported.');
+        setFile(null);
+        return;
+      }
+      if (selectedFile.size > 5 * 1024 * 1024) {
+        setError('File size exceeds the 5MB limit.');
+        setFile(null);
+        return;
+      }
+      setError(null);
+      setFile(selectedFile);
+    }
+  };
+
   const handleExtract = async () => {
-    if (!text.trim()) return;
+    if (activeTab === 'text' && !text.trim()) return;
+    if (activeTab === 'file' && !file) return;
+
     setIsExtracting(true);
     setError(null);
     setEntities([]);
 
     try {
-      const res = await fetch(`${BACKEND_URL}/api/ingest/text`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text }),
-      });
+      let res: Response;
 
-      if (!res.ok) throw new Error('Extraction failed');
+      if (activeTab === 'text') {
+        res = await fetch(`${BACKEND_URL}/api/ingest/text`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text }),
+        });
+      } else {
+        const formData = new FormData();
+        formData.append('file', file!);
+        res = await fetch(`${BACKEND_URL}/api/ingest/file`, {
+          method: 'POST',
+          body: formData,
+        });
+      }
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.detail || 'Extraction failed');
+      }
       const data = await res.json();
 
       const newEntities: ExtractedEntity[] = [];
@@ -74,6 +111,12 @@ export function QuickAddModal({ open, onOpenChange }: QuickAddModalProps) {
           details: o.properties || '', data: o, selected: true
         });
       });
+      (data.world_rules || []).forEach((r: any) => {
+        newEntities.push({
+          id: r.id, type: 'worldRule', label: `Rule: ${r.title || 'World Rule'}`,
+          details: r.description, data: r, selected: true
+        });
+      });
 
       setEntities(newEntities);
     } catch (err: any) {
@@ -98,9 +141,12 @@ export function QuickAddModal({ open, onOpenChange }: QuickAddModalProps) {
     });
 
     setText('');
+    setFile(null);
     setEntities([]);
     onOpenChange(false);
   };
+
+  const isExtractDisabled = isExtracting || (activeTab === 'text' ? !text.trim() : !file);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -111,23 +157,101 @@ export function QuickAddModal({ open, onOpenChange }: QuickAddModalProps) {
             Quick Add
           </DialogTitle>
           <DialogDescription className="text-(--sea-ink-soft)">
-            Paste a scene, manuscript excerpt, or lore text. AI will extract characters, locations, and events for you to add to the canvas.
+            Paste text or upload a PDF manuscript. AI will extract characters, locations, events, and rules into canvas nodes.
           </DialogDescription>
         </DialogHeader>
 
         {entities.length === 0 ? (
-          <div className="space-y-4 py-4">
-            <Textarea
-              placeholder="The wind howled through the Lighthouse. Elena gripped her sword tightly..."
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              maxLength={6000}
-              className="min-h-[200px] bg-(--surface) border-(--line) resize-none"
-            />
-            <div className="flex justify-between items-center text-xs text-(--sea-ink-soft)">
-              <span>{error ? <span className="text-rose-500">{error}</span> : "Paste up to ~1000 words."}</span>
-              <span>{text.length} / 6000 characters</span>
+          <div className="space-y-4 py-2">
+            {/* Mode Switcher Tabs */}
+            <div className="flex border-b border-(--line)">
+              <button
+                type="button"
+                onClick={() => { setActiveTab('text'); setError(null); }}
+                className={`flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-colors cursor-pointer ${
+                  activeTab === 'text'
+                    ? 'border-violet-500 text-violet-600 dark:text-violet-400'
+                    : 'border-transparent text-(--sea-ink-soft) hover:text-(--sea-ink)'
+                }`}
+              >
+                <FileText className="w-4 h-4" />
+                Paste Text
+              </button>
+              <button
+                type="button"
+                onClick={() => { setActiveTab('file'); setError(null); }}
+                className={`flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-colors cursor-pointer ${
+                  activeTab === 'file'
+                    ? 'border-violet-500 text-violet-600 dark:text-violet-400'
+                    : 'border-transparent text-(--sea-ink-soft) hover:text-(--sea-ink)'
+                }`}
+              >
+                <FileUp className="w-4 h-4" />
+                Upload PDF
+              </button>
             </div>
+
+            {activeTab === 'text' ? (
+              <div className="space-y-2">
+                <Textarea
+                  placeholder="The storm raged outside the Crimson Keep. Elena gripped her sword tightly..."
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  maxLength={6000}
+                  className="min-h-[180px] bg-(--surface) border-(--line) resize-none"
+                />
+                <div className="flex justify-between items-center text-xs text-(--sea-ink-soft)">
+                  <span>{error ? <span className="text-rose-500">{error}</span> : "Paste up to ~1000 words."}</span>
+                  <span>{text.length} / 6000 characters</span>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  accept="application/pdf"
+                  className="hidden"
+                />
+                {!file ? (
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className="border-2 border-dashed border-(--line) hover:border-violet-400 rounded-xl p-8 flex flex-col items-center justify-center gap-3 cursor-pointer bg-(--surface)/50 hover:bg-(--surface) transition-all"
+                  >
+                    <div className="p-3 rounded-full bg-violet-50 dark:bg-violet-950/50 text-violet-500">
+                      <FileUp className="w-6 h-6" />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm font-medium text-(--sea-ink)">Click to select a PDF file</p>
+                      <p className="text-xs text-(--sea-ink-soft) mt-1">Accepts .pdf files only</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between p-4 rounded-xl bg-(--surface) border border-(--line)">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <File className="w-8 h-8 text-violet-500 shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-(--sea-ink) truncate">{file.name}</p>
+                        <p className="text-xs text-(--sea-ink-soft)">{(file.size / 1024).toFixed(1)} KB</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setFile(null)}
+                      className="p-1 rounded-lg hover:bg-rose-100 dark:hover:bg-rose-950 text-rose-500 transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+                
+                <div className="text-xs text-(--sea-ink-soft) space-y-1">
+                  <p>📄 <strong className="text-(--sea-ink)">Recommended length:</strong> 3 to 5 pages (up to 5MB).</p>
+                  {error && <p className="text-rose-500 font-medium">{error}</p>}
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div className="space-y-4 py-4 max-h-100 overflow-y-auto custom-scrollbar pr-2">
@@ -154,11 +278,11 @@ export function QuickAddModal({ open, onOpenChange }: QuickAddModalProps) {
           {entities.length === 0 ? (
             <Button
               onClick={handleExtract}
-              disabled={isExtracting || !text.trim()}
+              disabled={isExtractDisabled}
               className="w-full bg-linear-to-r from-violet-600 to-fuchsia-500 text-white"
             >
               {isExtracting ? (
-                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Extracting...</>
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Extracting with Docling...</>
               ) : (
                 <><Wand2 className="w-4 h-4 mr-2" /> Extract Entities</>
               )}
