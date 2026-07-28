@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useRef } from 'react';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter
 } from '#/features/shadcn/components/ui/dialog';
@@ -7,33 +7,33 @@ import { Textarea } from '#/features/shadcn/components/ui/textarea';
 import { Checkbox } from '#/features/shadcn/components/ui/checkbox';
 import { Loader2, Wand2, CheckCircle2, FileUp, FileText, File, X } from 'lucide-react';
 import { useCanvasStore } from '#/features/canvas/store/useCanvasStore';
+import { useQuickAddStore } from '#/features/canvas/store/useQuickAddStore';
 
 interface QuickAddModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-interface ExtractedEntity {
-  id: string;
-  type: string;
-  label: string;
-  details: string;
-  data: any;
-  selected: boolean;
-}
-
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL ?? 'http://localhost:8000';
-
 export function QuickAddModal({ open, onOpenChange }: QuickAddModalProps) {
-  const [activeTab, setActiveTab] = useState<'text' | 'file'>('text');
-  const [text, setText] = useState('');
-  const [file, setFile] = useState<File | null>(null);
-  const [isExtracting, setIsExtracting] = useState(false);
-  const [entities, setEntities] = useState<ExtractedEntity[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const activeTab = useQuickAddStore(state => state.activeTab);
+  const text = useQuickAddStore(state => state.text);
+  const file = useQuickAddStore(state => state.file);
+  const isExtracting = useQuickAddStore(state => state.isExtracting);
+  const entities = useQuickAddStore(state => state.entities);
+  const error = useQuickAddStore(state => state.error);
+  const setActiveTab = useQuickAddStore(state => state.setActiveTab);
+  const setText = useQuickAddStore(state => state.setText);
+  const setFile = useQuickAddStore(state => state.setFile);
+  const setError = useQuickAddStore(state => state.setError);
+  const toggleEntitySelected = useQuickAddStore(state => state.toggleEntitySelected);
+  const setEntities = useQuickAddStore(state => state.setEntities);
+  const extractEntities = useQuickAddStore(state => state.extractEntities);
+  const commitSelectedEntities = useQuickAddStore(state => state.commitSelectedEntities);
+  const reset = useQuickAddStore(state => state.reset);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const addNode = useCanvasStore(state => state.addNode);
+  const canvasNodes = useCanvasStore(state => state.nodes);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -48,108 +48,31 @@ export function QuickAddModal({ open, onOpenChange }: QuickAddModalProps) {
         setFile(null);
         return;
       }
-      setError(null);
       setFile(selectedFile);
     }
   };
 
-  const handleExtract = async () => {
-    if (activeTab === 'text' && !text.trim()) return;
-    if (activeTab === 'file' && !file) return;
-
-    setIsExtracting(true);
-    setError(null);
-    setEntities([]);
-
-    try {
-      let res: Response;
-
-      if (activeTab === 'text') {
-        res = await fetch(`${BACKEND_URL}/api/ingest/text`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text }),
-        });
-      } else {
-        const formData = new FormData();
-        formData.append('file', file!);
-        res = await fetch(`${BACKEND_URL}/api/ingest/file`, {
-          method: 'POST',
-          body: formData,
-        });
-      }
-
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.detail || 'Extraction failed');
-      }
-      const data = await res.json();
-
-      const newEntities: ExtractedEntity[] = [];
-
-      (data.characters || []).forEach((c: any) => {
-        newEntities.push({
-          id: c.id, type: 'character', label: `Character: ${c.name}`,
-          details: c.description, data: c, selected: true
-        });
-      });
-      (data.locations || []).forEach((l: any) => {
-        newEntities.push({
-          id: l.id, type: 'location', label: `Location: ${l.name}`,
-          details: l.description, data: l, selected: true
-        });
-      });
-      (data.events || []).forEach((e: any) => {
-        newEntities.push({
-          id: e.id, type: 'event', label: 'Event',
-          details: e.description, data: e, selected: true
-        });
-      });
-      (data.objects || []).forEach((o: any) => {
-        newEntities.push({
-          id: o.id, type: 'object', label: `Object: ${o.name}`,
-          details: o.properties || '', data: o, selected: true
-        });
-      });
-      (data.world_rules || []).forEach((r: any) => {
-        newEntities.push({
-          id: r.id, type: 'worldRule', label: `Rule: ${r.title || 'World Rule'}`,
-          details: r.description, data: r, selected: true
-        });
-      });
-
-      setEntities(newEntities);
-    } catch (err: any) {
-      setError(err.message || 'Failed to extract entities');
-    } finally {
-      setIsExtracting(false);
-    }
+  const handleExtract = () => {
+    extractEntities(canvasNodes);
   };
 
   const handleCommit = () => {
-    const selected = entities.filter(e => e.selected);
-    let index = 0;
-    selected.forEach((ent) => {
-      // Position nodes in a 3-column grid starting near the center
-      const col = index % 3;
-      const row = Math.floor(index / 3);
-      const x = 350 + col * 260;
-      const y = 150 + row * 180;
-      
-      addNode(ent.type as any, { x, y }, ent.data);
-      index += 1;
-    });
-
-    setText('');
-    setFile(null);
-    setEntities([]);
+    commitSelectedEntities(addNode);
     onOpenChange(false);
   };
 
+  const handleModalClose = (isOpen: boolean) => {
+    if (!isOpen) {
+      reset();
+    }
+    onOpenChange(isOpen);
+  };
+
   const isExtractDisabled = isExtracting || (activeTab === 'text' ? !text.trim() : !file);
+  const duplicateCount = entities.filter(e => e.existsOnCanvas).length;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleModalClose}>
       <DialogContent className="sm:max-w-150 island-shell border-none shadow-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl text-(--sea-ink)">
@@ -167,24 +90,22 @@ export function QuickAddModal({ open, onOpenChange }: QuickAddModalProps) {
             <div className="flex border-b border-(--line)">
               <button
                 type="button"
-                onClick={() => { setActiveTab('text'); setError(null); }}
-                className={`flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-colors cursor-pointer ${
-                  activeTab === 'text'
-                    ? 'border-violet-500 text-violet-600 dark:text-violet-400'
-                    : 'border-transparent text-(--sea-ink-soft) hover:text-(--sea-ink)'
-                }`}
+                onClick={() => setActiveTab('text')}
+                className={`flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-colors cursor-pointer ${activeTab === 'text'
+                  ? 'border-violet-500 text-violet-600 dark:text-violet-400'
+                  : 'border-transparent text-(--sea-ink-soft) hover:text-(--sea-ink)'
+                  }`}
               >
                 <FileText className="w-4 h-4" />
                 Paste Text
               </button>
               <button
                 type="button"
-                onClick={() => { setActiveTab('file'); setError(null); }}
-                className={`flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-colors cursor-pointer ${
-                  activeTab === 'file'
-                    ? 'border-violet-500 text-violet-600 dark:text-violet-400'
-                    : 'border-transparent text-(--sea-ink-soft) hover:text-(--sea-ink)'
-                }`}
+                onClick={() => setActiveTab('file')}
+                className={`flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-colors cursor-pointer ${activeTab === 'file'
+                  ? 'border-violet-500 text-violet-600 dark:text-violet-400'
+                  : 'border-transparent text-(--sea-ink-soft) hover:text-(--sea-ink)'
+                  }`}
               >
                 <FileUp className="w-4 h-4" />
                 Upload PDF
@@ -245,7 +166,7 @@ export function QuickAddModal({ open, onOpenChange }: QuickAddModalProps) {
                     </button>
                   </div>
                 )}
-                
+
                 <div className="text-xs text-(--sea-ink-soft) space-y-1">
                   <p>📄 <strong className="text-(--sea-ink)">Recommended length:</strong> 3 to 5 pages (up to 5MB).</p>
                   {error && <p className="text-rose-500 font-medium">{error}</p>}
@@ -255,18 +176,35 @@ export function QuickAddModal({ open, onOpenChange }: QuickAddModalProps) {
           </div>
         ) : (
           <div className="space-y-4 py-4 max-h-100 overflow-y-auto custom-scrollbar pr-2">
-            <p className="text-sm font-medium text-(--sea-ink)">Select entities to add to your graph:</p>
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-(--sea-ink)">Select entities to add to your graph:</p>
+              {duplicateCount > 0 && (
+                <span className="text-xs font-medium text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+                  {duplicateCount} already on canvas
+                </span>
+              )}
+            </div>
+
             {entities.map(ent => (
-              <div key={ent.id} className="flex items-start gap-3 p-3 rounded-lg bg-(--surface) border border-(--line)">
+              <div
+                key={ent.id}
+                className={`flex items-start gap-3 p-3 rounded-lg bg-(--surface) border transition-colors ${ent.existsOnCanvas ? 'border-amber-400/50 dark:border-amber-700/50 bg-amber-500/5' : 'border-(--line)'
+                  }`}
+              >
                 <Checkbox
                   checked={ent.selected}
-                  onCheckedChange={(checked) => {
-                    setEntities(entities.map(e => e.id === ent.id ? { ...e, selected: checked === true } : e));
-                  }}
+                  onCheckedChange={() => toggleEntitySelected(ent.id)}
                   className="mt-1"
                 />
-                <div>
-                  <p className="font-semibold text-sm text-(--sea-ink)">{ent.label}</p>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="font-semibold text-sm text-(--sea-ink)">{ent.label}</p>
+                    {ent.existsOnCanvas && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+                        Already on Canvas
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-(--sea-ink-soft) mt-1">{ent.details}</p>
                 </div>
               </div>
@@ -279,7 +217,7 @@ export function QuickAddModal({ open, onOpenChange }: QuickAddModalProps) {
             <Button
               onClick={handleExtract}
               disabled={isExtractDisabled}
-              className="w-full bg-linear-to-r from-violet-600 to-fuchsia-500 text-white"
+              className="w-full bg-linear-to-r from-violet-600 to-fuchsia-500 text-white cursor-pointer"
             >
               {isExtracting ? (
                 <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Extracting with Docling...</>
@@ -289,10 +227,10 @@ export function QuickAddModal({ open, onOpenChange }: QuickAddModalProps) {
             </Button>
           ) : (
             <div className="flex gap-2 w-full">
-              <Button variant="outline" className="flex-1" onClick={() => setEntities([])}>
+              <Button variant="outline" className="flex-1 cursor-pointer" onClick={() => setEntities([])}>
                 Cancel
               </Button>
-              <Button onClick={handleCommit} className="flex-1 bg-violet-600 text-white hover:bg-violet-700">
+              <Button onClick={handleCommit} className="flex-1 bg-violet-600 text-white hover:bg-violet-700 cursor-pointer">
                 <CheckCircle2 className="w-4 h-4 mr-2" />
                 Add to Canvas
               </Button>
