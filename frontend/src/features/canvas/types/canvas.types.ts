@@ -146,7 +146,7 @@ export interface CanvasState {
   lastEditedTimestamp: number | null;
   
   // Node operations
-  addNode: (type: StoryNodeType, position?: { x: number; y: number }) => void;
+  addNode: (type: StoryNodeType, position?: { x: number; y: number }, data?: Partial<StoryNodeData>) => void;
   updateNodeData: (id: string, data: Partial<StoryNodeData>, skipEditTracking?: boolean) => void;
   deleteNode: (id: string) => void;
   

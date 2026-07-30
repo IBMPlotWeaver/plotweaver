@@ -128,6 +128,7 @@ export const useCanvasStore = create<
   addNode: (
     type,
     position = { x: 200 + Math.random() * 200, y: 150 + Math.random() * 150 },
+    initialData = {}
   ) => {
     const nodes = get().nodes
 
@@ -145,6 +146,7 @@ export const useCanvasStore = create<
       data: {
         ...DEFAULT_NODE_DATA[type],
         ...(type === 'storyBeat' && { timelineOrder }),
+        ...initialData
       } as StoryNodeData,
     }
     set({ nodes: [...nodes, newNode], hasUnsavedChanges: true })
