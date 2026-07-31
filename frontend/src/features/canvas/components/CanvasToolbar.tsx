@@ -1,4 +1,4 @@
-import { Maximize2, Trash2, Save, LayoutGrid, Moon, Sun, Edit2, ArrowLeft, RotateCcw, FileDown, X, Loader2, Copy, Check, ZoomIn, ZoomOut } from 'lucide-react';
+import { Maximize2, Trash2, Save, LayoutGrid, Moon, Sun, Edit2, ArrowLeft, RotateCcw, FileDown, X, Loader2, Copy, Check, ZoomIn, ZoomOut, Wand2 } from 'lucide-react';
 import { useReactFlow } from '@xyflow/react';
 import { useCanvasStore } from '#/features/canvas/store/useCanvasStore';
 import { useThemeStore } from '#/features/store/useThemeStore';
@@ -24,6 +24,7 @@ interface CanvasToolbarProps {
   onTitleChange?: (title: string) => void;
   onGuestSave?: () => void;
   onGuestReset?: () => void;
+  onQuickAddClick?: () => void;
 }
 
 // ── Export modal ─────────────────────────────────────────────────────────────
@@ -110,7 +111,7 @@ function ExportModal({
  * Floating toolbar for the story canvas.
  * Provides node creation, zoom, fit-view, save, theme toggle, and export controls.
  */
-export function CanvasToolbar({ storyTitle = 'Untitled Story', isGuestMode = false, onTitleChange, onGuestSave, onGuestReset }: CanvasToolbarProps) {
+export function CanvasToolbar({ storyTitle = 'Untitled Story', isGuestMode = false, onTitleChange, onGuestSave, onGuestReset, onQuickAddClick }: CanvasToolbarProps) {
   const { fitView, zoomIn, zoomOut } = useReactFlow();
   const deleteNode = useCanvasStore(state => state.deleteNode)
   const selectedNodeId = useCanvasStore(state => state.selectedNodeId)
@@ -122,6 +123,7 @@ export function CanvasToolbar({ storyTitle = 'Untitled Story', isGuestMode = fal
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState(storyTitle);
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
+  const [isExportConfirmOpen, setIsExportConfirmOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -217,6 +219,49 @@ export function CanvasToolbar({ storyTitle = 'Untitled Story', isGuestMode = fal
             >
               <RotateCcw className="w-4 h-4 mr-2" />
               Reset Workspace
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Export Confirmation Modal */}
+      <Dialog open={isExportConfirmOpen} onOpenChange={setIsExportConfirmOpen}>
+        <DialogContent className="max-w-md bg-(--surface) border-(--line) text-(--sea-ink)">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-lg font-semibold">
+              <FileDown className="w-5 h-5 text-violet-500" />
+              Export Story Outline
+            </DialogTitle>
+            <DialogDescription className="text-(--sea-ink-soft) mt-2 space-y-3">
+              <span>Are you sure you want to generate and export your story outline?</span>
+              <div className="p-3.5 rounded-xl bg-(--bg-base)/50 border border-(--line) text-xs space-y-1.5 mt-2">
+                <p className="font-semibold text-(--sea-ink)">Available Export Methods:</p>
+                <p className="text-(--sea-ink-soft)">📄 <strong>Plain Text File (.txt)</strong> — Download outline as a .txt document.</p>
+                <p className="text-(--sea-ink-soft)">📋 <strong>Copy to Clipboard</strong> — Copy formatted text directly.</p>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-4 gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => setIsExportConfirmOpen(false)}
+              className="border-(--line) text-(--sea-ink) hover:bg-(--line) cursor-pointer"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                setIsExportConfirmOpen(false);
+                handleExport();
+              }}
+              disabled={isExporting}
+              className="bg-violet-600 text-white hover:bg-violet-700 cursor-pointer"
+            >
+              {isExporting ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating...</>
+              ) : (
+                <><FileDown className="w-4 h-4 mr-2" /> Export Outline</>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -353,9 +398,19 @@ export function CanvasToolbar({ storyTitle = 'Untitled Story', isGuestMode = fal
             </>
           )}
 
+          {/* Quick Add button */}
+          <button
+            onClick={onQuickAddClick}
+            className="island-shell flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-colors cursor-pointer border border-emerald-200 dark:border-emerald-800"
+            title="Extract nodes from text"
+          >
+            <Wand2 className="w-4 h-4" />
+            <span className="hidden sm:inline">Quick Add</span>
+          </button>
+
           {/* Export button */}
           <button
-            onClick={handleExport}
+            onClick={() => setIsExportConfirmOpen(true)}
             disabled={isExporting}
             className="island-shell flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/30 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed border border-violet-200 dark:border-violet-800"
             title="Export story outline"

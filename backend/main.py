@@ -6,7 +6,7 @@ from typing import Optional
 from datetime import datetime, timezone
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from supabase import create_client, Client
@@ -166,7 +166,7 @@ def get_granite_model() -> ModelInference:
         credentials=credentials,
         project_id=project_id,
         params={
-            "max_new_tokens": 1200,
+            "max_new_tokens": 4096,
             "temperature": 0.2,
             "repetition_penalty": 1.1,
         },
@@ -1039,3 +1039,68 @@ async def export_story(request: ExportMarkdownRequest):
         "format": "markdown",
         "content": markdown
     }
+
+class IngestTextRequest(BaseModel):
+    text: str
+
+@app.post("/api/ingest/text")
+async def ingest_text(request: IngestTextRequest):
+    from ingestion import extract_entities_from_text
+    try:
+        result = extract_entities_from_text(request.text)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/ingest/file")
+async def ingest_file(file: UploadFile = File(...)):
+    from docling.document_converter import DocumentConverter
+    import tempfile
+    import os
+    import pypdfium2
+    from ingestion import extract_entities_from_text
+
+    # 1. Enforce max file size: 5MB (5 * 1024 * 1024 bytes)
+    content = await file.read()
+    max_bytes = 5 * 1024 * 1024
+    if len(content) > max_bytes:
+        raise HTTPException(status_code=400, detail="File size exceeds the maximum limit of 5MB.")
+
+    suffix = os.path.splitext(file.filename)[1] if file.filename else ".pdf"
+    if suffix.lower() != ".pdf":
+        raise HTTPException(status_code=400, detail="Only PDF files are supported.")
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp:
+        temp.write(content)
+        temp_path = temp.name
+
+    try:
+        # 2. Enforce PDF page limit: Max 5 pages
+        try:
+            pdf = pypdfium2.PdfDocument(temp_path)
+            page_count = len(pdf)
+            pdf.close()
+            if page_count > 5:
+                raise HTTPException(
+                    status_code=400, 
+                    detail=f"PDF has {page_count} pages. Maximum allowed is 5 pages."
+                )
+        except HTTPException:
+            raise
+        except Exception as pdf_err:
+            raise HTTPException(status_code=400, detail=f"Invalid or unreadable PDF file: {pdf_err}")
+
+        # 3. Parse with Docling
+        converter = DocumentConverter()
+        result = converter.convert(temp_path)
+        text = result.document.export_to_markdown()
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
+    # 4. Extract entities
+    try:
+        extracted = extract_entities_from_text(text)
+        return extracted
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
