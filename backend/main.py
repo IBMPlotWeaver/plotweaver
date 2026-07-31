@@ -33,7 +33,7 @@ origins = [
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -1060,47 +1060,73 @@ async def ingest_file(file: UploadFile = File(...)):
     import pypdfium2
     from ingestion import extract_entities_from_text
 
+    print(f"\n[Ingest File] Received file upload: '{file.filename}'")
+
     # 1. Enforce max file size: 5MB (5 * 1024 * 1024 bytes)
     content = await file.read()
     max_bytes = 5 * 1024 * 1024
     if len(content) > max_bytes:
+        print(f"[Ingest File] Rejected: File size ({len(content)} bytes) exceeds 5MB limit.")
         raise HTTPException(status_code=400, detail="File size exceeds the maximum limit of 5MB.")
 
     suffix = os.path.splitext(file.filename)[1] if file.filename else ".pdf"
     if suffix.lower() != ".pdf":
+        print(f"[Ingest File] Rejected: Non-PDF extension '{suffix}'.")
         raise HTTPException(status_code=400, detail="Only PDF files are supported.")
 
     with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp:
         temp.write(content)
         temp_path = temp.name
 
-    try:
-        # 2. Enforce PDF page limit: Max 5 pages
-        try:
-            pdf = pypdfium2.PdfDocument(temp_path)
-            page_count = len(pdf)
-            pdf.close()
-            if page_count > 5:
-                raise HTTPException(
-                    status_code=400, 
-                    detail=f"PDF has {page_count} pages. Maximum allowed is 5 pages."
-                )
-        except HTTPException:
-            raise
-        except Exception as pdf_err:
-            raise HTTPException(status_code=400, detail=f"Invalid or unreadable PDF file: {pdf_err}")
+    text = ""
 
-        # 3. Parse with Docling
-        converter = DocumentConverter()
-        result = converter.convert(temp_path)
-        text = result.document.export_to_markdown()
+    try:
+        # 2. Inspect PDF page count & attempt fast text extraction with pypdfium2
+        pdf = pypdfium2.PdfDocument(temp_path)
+        page_count = len(pdf)
+        print(f"[Ingest File] PDF page count: {page_count}")
+        if page_count > 5:
+            pdf.close()
+            raise HTTPException(
+                status_code=400, 
+                detail=f"PDF has {page_count} pages. Maximum allowed is 5 pages."
+            )
+
+        extracted_pages = []
+        for i in range(page_count):
+            textpage = pdf[i].get_textpage()
+            extracted_pages.append(textpage.get_text_range())
+        pdf.close()
+
+        fast_text = "\n\n".join(extracted_pages).strip()
+        
+        # If the PDF has digital text, use fast_text directly
+        if len(fast_text) > 30:
+            print(f"[Ingest File] Extracted {len(fast_text)} characters using fast PDF text parser.")
+            text = fast_text
+        else:
+            # If digital text is missing (e.g. scanned image PDF), use Docling
+            print("[Ingest File] Digital text layer sparse or empty. Converting with Docling DocumentConverter...")
+            converter = DocumentConverter()
+            result = converter.convert(temp_path)
+            text = result.document.export_to_markdown()
+            print(f"[Ingest File] Docling converted PDF to {len(text)} characters of Markdown.")
+
+    except HTTPException:
+        raise
+    except Exception as pdf_err:
+        print(f"[Ingest File] PDF Error: {pdf_err}")
+        raise HTTPException(status_code=400, detail=f"Invalid or unreadable PDF file: {pdf_err}")
     finally:
         if os.path.exists(temp_path):
             os.remove(temp_path)
 
-    # 4. Extract entities
+    # 3. Extract entities via Granite AI
     try:
+        print("[Ingest File] Extracting narrative nodes with Granite AI...")
         extracted = extract_entities_from_text(text)
+        print(f"[Ingest File] Successfully extracted: {len(extracted.characters)} characters, {len(extracted.locations)} locations, {len(extracted.events)} events, {len(extracted.objects)} objects.")
         return extracted
     except Exception as e:
+        print(f"[Ingest File] Extraction Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
