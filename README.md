@@ -5,6 +5,14 @@
 
 ---
 
+## 📺 Video Demo
+
+Watch the full walkthrough and feature demo on YouTube:  
+[![PlotWeaver Demo](https://img.shields.io/badge/YouTube-PlotWeaver%20Demo-red?style=for-the-badge&logo=youtube)](https://youtu.be/kRZ4yRUUrDg)  
+🔗 **[https://youtu.be/kRZ4yRUUrDg](https://youtu.be/kRZ4yRUUrDg)**
+
+---
+
 ## 🎯 Challenge Theme
 
 **Selected Challenge Theme:** `July Challenge - Reimagine Creative Industries with AI`
@@ -40,90 +48,3 @@ Writing complex novels, screenplays, or game lore is notoriously difficult:
 ## 🏗️ AI Approach and Architecture
 
 PlotWeaver relies on a robust full-stack architecture combining high-performance frontend graph rendering with IBM's enterprise AI suite:
-
-```
-[ Frontend: React Flow + Zustand ]
-           │
-           ▼ HTTP / REST
-[ Backend: FastAPI Engine ]
-   ├── Document Parsing: IBM Docling (PDF -> Markdown)
-   ├── Embedding Search: IBM Slate (ibm/slate-30m-english-rtrvr-v2)
-   └── Agent Orchestrator: IBM Granite (watsonx.ai)
-          ├── Entity Extraction Agent (Unstructured Prose -> JSON)
-          └── Continuity & Rule Checking Agent (Story Graph -> Insight Flags)
-```
-
-### Technical Stack & Models:
-
-- **Frontend**: React, TanStack Start/Router, React Flow graph engine, Zustand state management, Tailwind CSS v4, Shadcn UI.
-- **Backend Engine**: FastAPI (Python), PyPDFium2.
-- **Document Ingestion**: **IBM Docling** (`docling.document_converter`) for layout parsing, OCR, and markdown conversion.
-- **AI Models & Orchestration**:
-  - **IBM Granite** (via `watsonx.ai`): Foundation model powering multi-agent narrative analysis and entity extraction.
-  - **IBM Slate Embeddings** (`ibm/slate-30m-english-rtrvr-v2`): Semantic retrieval for character and rule context matching.
-  - **Granite Guardian**: Safety and hallucination check guardrails for AI insight validation.
-
----
-
-## 🤖 How IBM Bob Was Used
-
-**IBM Bob** acted as our primary AI pair programmer and architecture assistant throughout the entire development lifecycle:
-
-1. **System Architecture & API Design**: IBM Bob helped design the FastAPI REST architecture, multi-agent prompt structures, and client-side Zustand store modularization.
-2. **Docling & Granite Pipeline Integration**: Assisted in integrating IBM Docling's PDF converter pipeline and crafting strict, zero-shot JSON prompts for Granite models to prevent parsing errors.
-3. **Smart Duplicate Logic & UI Refactoring**: Guided the implementation of smart node matching algorithms and clean component refactoring for a seamless UX.
-
----
-
-## 🚀 How to Run Locally
-
-### Prerequisites
-
-- Python 3.10+
-- Node.js 18+ & `pnpm`
-- IBM watsonx.ai API Credentials
-
-### 1. Backend Setup (FastAPI)
-
-```bash
-cd backend
-python -m venv venv
-# On Windows:
-venv\Scripts\activate
-# On macOS/Linux:
-# source venv/bin/activate
-
-pip install -r requirements.txt
-```
-
-Create a `.env` file in the `backend/` directory:
-
-```env
-WATSONX_API_KEY=your_ibm_watsonx_api_key
-WATSONX_PROJECT_ID=your_watsonx_project_id
-WATSONX_URL=https://us-south.ml.cloud.ibm.com
-```
-
-Start the FastAPI server:
-
-```bash
-uvicorn main:app --reload --port 8000
-```
-
-### 2. Frontend Setup (React + Vite)
-
-```bash
-cd frontend
-pnpm install
-pnpm dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) in your browser.
-
----
-
-## 👥 Team
-
-- **Darl** – Full Stack Developer
-- **Karan** – AI Engineer & Backend Architecture
-- **Michael** – AI Engineer
